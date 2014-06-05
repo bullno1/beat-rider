@@ -1,0 +1,4 @@
+[submodule "hosts/titan"]
+	path = hosts/titan
+	url = git@tapbat.com:bachlv/titan
+	branch = beat-rider
