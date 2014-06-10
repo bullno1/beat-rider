@@ -1,0 +1,26 @@
+#ifndef CMAKE_CONFIG_H
+#define CMAKE_CONFIG_H
+
+#cmakedefine HAVE_STDLIB_H 1
+#cmakedefine HAVE_STDIO_H 1
+#cmakedefine HAVE_MATH_H 1
+#cmakedefine HAVE_STRING_H 1
+#cmakedefine HAVE_LIMITS_H 1
+#cmakedefine HAVE_C99_VARARGS_MACROS 1
+
+/*
+#define HAVE_AUBIO_DOUBLE 1
+#define HAVE_SNDFILE 1
+#define HAVE_SAMPLERATE 1
+#define HAVE_JACK 1
+#define HAVE_AVCODEC 1
+#define HAVE_AVFORMAT 1
+#define HAVE_AVUTIL 1
+#define HAVE_AVRESAMPLE 1
+#define HAVE_LIBAV 1
+#define HAVE_WAVREAD 1
+#define HAVE_WAVWRITE 1
+*/
+#define HAVE_MEMCPY_HACKS 1
+
+#endif

@@ -1,0 +1,3 @@
+#!/bin/sh
+
+easter run titan profiles/simulator.lua profiles/GalaxyS2.lua src/main.lua
