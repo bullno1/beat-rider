@@ -55,28 +55,8 @@ mesh:setPrimType(MOAIMesh.GL_TRIANGLE_STRIP)
 
 local prop = MOAIProp.new ()
 prop:setDeck ( mesh )
---prop:moveRot ( 360, 360, 0, 6 )
 layer:insertProp ( prop )
 prop:setDepthTest(MOAIProp.DEPTH_TEST_LESS)
-
---local keyboard = MOAIInputMgr.device.keyboard
---MOAICoroutine.new():run(function()
-	--while true do
-		--if keyboard:keyIsDown(97) then
-			--camera:setLoc(camera:modelToWorld(-10, 0, 0))
-		--elseif keyboard:keyIsDown(100) then
-			--camera:setLoc(camera:modelToWorld(10, 0, 0))
-		--end
-
-		--if keyboard:keyIsDown(119) then
-			--camera:setLoc(camera:modelToWorld(0, 0, -10))
-		--elseif keyboard:keyIsDown(115) then
-			--camera:setLoc(camera:modelToWorld(0, 0, 10))
-		--end
-
-		--coroutine.yield()
-	--end
---end)
 
 local loader = require "mesh"
 local mesh = loader("assets/spaceship.dae")
@@ -95,17 +75,17 @@ MOAIInputMgr.device.touch:setCallback(function(event, id, x, y, tapCount)
 		if firstTouch and secondTouch then
 			local x1, y1 = touch:getTouch(firstTouch)
 			local x2, y2 = touch:getTouch(secondTouch)
-			lastDistance = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)
+			lastDistance = math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
 		end
 	elseif event == MOAITouchSensor.TOUCH_MOVE then
 		local firstTouch, secondTouch = touch:getActiveTouches()
 		if firstTouch and secondTouch then
 			local x1, y1 = touch:getTouch(firstTouch)
 			local x2, y2 = touch:getTouch(secondTouch)
-			local distance = (x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2)
+			local distance = math.sqrt((x1 - x2) * (x1 - x2) + (y1 - y2) * (y1 - y2))
 			local diff = distance - lastDistance
 
-			camera:setLoc(camera:modelToWorld(0, 0, diff/5))
+			camera:setLoc(camera:modelToWorld(0, 0, -diff * 2))
 
 			lastDistance = distance
 		else
