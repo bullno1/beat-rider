@@ -116,6 +116,47 @@ public:
 		return 1;
 	}
 
+	static int addSpectralDescriptor(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "US");
+
+		//TODO: validate descriptor name
+		self->mSpectralDescs[state.GetValue(2, "")] = FloatVec();
+
+		return 0;
+	}
+
+	static int removeSpectralDescriptor(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "US");
+
+		SpectralDescriptions::iterator itr = self->mSpectralDescs.find(state.GetValue(2, ""));
+		if(itr != self->mSpectralDescs.end())
+		{
+			self->mSpectralDescs.erase(itr);
+		}
+
+		return 0;
+	}
+
+	static int getSpectralDescription(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "US");
+
+		SpectralDescriptions::iterator itr = self->mSpectralDescs.find(state.GetValue(2, ""));
+		if(itr != self->mSpectralDescs.end())
+		{
+			lua_newtable(L);
+			state.WriteArray(itr->second.size(), itr->second.data());
+		}
+		else
+		{
+			state.Push();
+		}
+
+		return 1;
+	}
+
 	static void startAnalyzer(Aubio* self)
 	{
 		stopAnalyzer(self);
@@ -138,8 +179,15 @@ public:
 		Aubio* self = static_cast<Aubio*>(selfPtr);
 		self->mAnalyzerRunning = true;
 
+		// Reset old feature buffers
 		self->mBeatTimes.clear();
+		self->mOnsetTimes.clear();
+		for(SpectralDescriptions::iterator itr = self->mSpectralDescs.begin(); itr != self->mSpectralDescs.end(); ++itr)
+		{
+			itr->second.clear();
+		}
 
+		// Extract some book keeping info
 		uint_t hopSize = self->mHopSize;
 		const float* samples = self->mAudioData;
 
@@ -149,6 +197,7 @@ public:
 		UInt32 numHops = numFrames / self->mHopSize;
 		UInt32 sampRate = soundInfo.mSampleRate;
 
+		// Create analyzers
 		fvec_t* hopBuff = new_fvec(self->mHopSize);
 		fvec_t* tempBuff = new_fvec(2);
 		aubio_onset_t* onset = new_aubio_onset(
@@ -157,12 +206,21 @@ public:
 			hopSize,
 			sampRate
 		);
+
 		aubio_tempo_t* tempo = new_aubio_tempo(
 			const_cast<char_t*>("default"),
 			hopSize * 2,
 			hopSize,
 			sampRate
 		);
+
+		std::map<std::string, aubio_specdesc_t*> specdescs;
+		for(SpectralDescriptions::const_iterator itr = self->mSpectralDescs.begin(); itr != self->mSpectralDescs.end(); ++itr)
+		{
+			specdescs[itr->first] = new_aubio_specdesc(const_cast<char_t*>(itr->first.c_str()), hopSize * 2);
+		}
+		aubio_pvoc_t* pvoc = new_aubio_pvoc(hopSize * 2, hopSize);
+		cvec_t* fftBuff = new_cvec(hopSize * 2);
 
 		// Mix all channels for analysis
 		for(unsigned int hopIndex = 0; hopIndex < numHops && !self->mAnalyzerShouldStop; ++hopIndex)
@@ -191,8 +249,21 @@ public:
 			{
 				self->mOnsetTimes.push_back(aubio_onset_get_last_s(onset));
 			}
+			//Spectral description
+			aubio_pvoc_do(pvoc, hopBuff, fftBuff);
+			for(SpectralDescriptions::iterator itr = self->mSpectralDescs.begin(); itr != self->mSpectralDescs.end(); ++itr)
+			{
+				aubio_specdesc_do(specdescs[itr->first], fftBuff, tempBuff);
+				itr->second.push_back(fvec_get_sample(tempBuff, 0));
+			}
 		}
 
+		del_cvec(fftBuff);
+		del_aubio_pvoc(pvoc);
+		for(std::map<std::string, aubio_specdesc_t*>::iterator itr = specdescs.begin(); itr != specdescs.end(); ++itr)
+		{
+			del_aubio_specdesc(itr->second);
+		}
 		del_aubio_tempo(tempo);
 		del_aubio_onset(onset);
 		del_fvec(hopBuff);
@@ -240,6 +311,9 @@ void Aubio::RegisterLuaFuncs(MOAILuaState& state)
 		{ "isDone", &Impl::isDone },
 		{ "getBeats", &Impl::getBeats },
 		{ "getOnsets", &Impl::getOnsets },
+		{ "addSpectralDescriptor", &Impl::addSpectralDescriptor },
+		{ "removeSpectralDescriptor", &Impl::removeSpectralDescriptor },
+		{ "getSpectralDescription", &Impl::getSpectralDescription },
 		{ NULL, NULL }
 	};
 	luaL_register(state, 0, regTable);

@@ -6,6 +6,8 @@
 #include <pthread.h>
 #include <aubio.h>
 #include <vector>
+#include <map>
+#include <string>
 
 class Aubio: public virtual MOAILuaObject
 {
@@ -19,6 +21,9 @@ public:
 	void RegisterLuaClass(MOAILuaState& state);
 	void RegisterLuaFuncs(MOAILuaState& state);
 private:
+	typedef std::vector<float> FloatVec;
+	typedef std::map<std::string, FloatVec> SpectralDescriptions;
+
 	// Untz audio
 	float* mAudioData;
 	UNTZ::Sound* mSound;
@@ -30,8 +35,9 @@ private:
 	// Analysis
 	volatile float mAnalysisProgress;
 	uint_t mHopSize;
-	std::vector<float> mBeatTimes;
-	std::vector<float> mOnsetTimes;
+	FloatVec mBeatTimes;
+	FloatVec mOnsetTimes;
+	SpectralDescriptions mSpectralDescs;
 };
 
 #endif

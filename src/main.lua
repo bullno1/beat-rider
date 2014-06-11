@@ -1,5 +1,6 @@
 MOAIUntzSystem.initialize(44100, 1000)
 aubio = Aubio.new()
+aubio:addSpectralDescriptor("energy")
 aubio:load("assets/8282.ogg")
 aubio:play()
 
@@ -110,8 +111,12 @@ MOAICoroutine.new():run(function()
 		if aubio:isDone() then
 			local beats = aubio:getBeats()
 			local onsets = aubio:getOnsets()
+			local energies = aubio:getSpectralDescription("energy")
+			local yolo = aubio:getSpectralDescription("yolo")
 			print(#beats)
 			print(#onsets)
+			print(#energies)
+			print(yolo)
 			break
 		end
 		coroutine.yield()
