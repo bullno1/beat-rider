@@ -3,6 +3,9 @@
 
 #include <moai-core/MOAILua.h>
 #include <UntzSound.h>
+#include <pthread.h>
+#include <aubio.h>
+#include <vector>
 
 class Aubio: public virtual MOAILuaObject
 {
@@ -16,8 +19,18 @@ public:
 	void RegisterLuaClass(MOAILuaState& state);
 	void RegisterLuaFuncs(MOAILuaState& state);
 private:
+	// Untz audio
 	float* mAudioData;
 	UNTZ::Sound* mSound;
+	UNTZ::SoundInfo mSoundInfo;
+	// Threading
+	volatile bool mAnalyzerRunning;
+	volatile bool mAnalyzerShouldStop;
+	pthread_t mAnalyzerThread;
+	// Analysis
+	volatile float mAnalysisProgress;
+	uint_t mHopSize;
+	std::vector<float> mBeatTimes;
 };
 
 #endif

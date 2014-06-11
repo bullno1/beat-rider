@@ -1,5 +1,6 @@
 #include <moai-core/headers.h>
 #include "Aubio.hpp"
+#include <pthread.h>
 
 template<typename T>
 void safeArrayDelete(T*& ptr)
@@ -27,16 +28,17 @@ public:
 	{
 		MOAI_LUA_SETUP(Aubio, "US");
 
+		stopAnalyzer(self);
 		disposeSound(self->mSound);
 		safeArrayDelete(reinterpret_cast<char*&>(self->mAudioData));
 
 		STLString filename = state.GetValue(2, "");
 		if(MOAILogMessages::CheckFileExists(filename.c_str()))
 		{
-			UNTZ::SoundInfo soundInfo;
-			if(UNTZ::Sound::decode(filename, soundInfo, &self->mAudioData))
+			if(UNTZ::Sound::decode(filename, self->mSoundInfo, &self->mAudioData))
 			{
-				self->mSound = UNTZ::Sound::create(soundInfo, self->mAudioData, false);
+				self->mSound = UNTZ::Sound::create(self->mSoundInfo, self->mAudioData, false);
+				startAnalyzer(self);
 				state.Push(true);
 			}
 			else
@@ -58,17 +60,125 @@ public:
 
 		if(self->mSound)
 		{
-			MOAILogMgr::Get().Print("Test");
 			self->mSound->play();
 		}
 
 		return 0;
+	}
+
+	static int getProgress(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "U");
+
+		state.Push(self->mAnalysisProgress);
+		return 1;
+	}
+
+	static int isDone(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "U");
+
+		state.Push(!self->mAnalyzerRunning);
+		return 1;
+	}
+
+	static int getBeats(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "U");
+
+		if(self->mAnalyzerRunning)
+		{
+			state.Push();
+		}
+		else
+		{
+			lua_newtable(L);
+			state.WriteArray(self->mBeatTimes.size(), self->mBeatTimes.data());
+		}
+
+		return 1;
+	}
+
+	static void startAnalyzer(Aubio* self)
+	{
+		stopAnalyzer(self);
+		self->mAnalyzerShouldStop = false;
+		self->mAnalysisProgress = 0.0f;
+		pthread_create(&self->mAnalyzerThread, NULL, &analyzerThreadEntry, self);
+	}
+
+	static void stopAnalyzer(Aubio* self)
+	{
+		if(self->mAnalyzerRunning)
+		{
+			self->mAnalyzerShouldStop = true;
+			pthread_join(self->mAnalyzerThread, NULL);
+		}
+	}
+
+	static void* analyzerThreadEntry(void* selfPtr)
+	{
+		Aubio* self = static_cast<Aubio*>(selfPtr);
+		self->mAnalyzerRunning = true;
+
+		self->mBeatTimes.clear();
+
+		uint_t hopSize = self->mHopSize;
+		const float* samples = self->mAudioData;
+
+		UNTZ::SoundInfo& soundInfo = self->mSoundInfo;
+		UInt32 numChannels = soundInfo.mChannels;
+		UInt32 numFrames = soundInfo.mTotalFrames;
+		UInt32 numHops = numFrames / self->mHopSize;
+
+		fvec_t* hopBuff = new_fvec(self->mHopSize);
+		fvec_t* tempBuff = new_fvec(2);
+		aubio_tempo_t* tempo = new_aubio_tempo(
+			const_cast<char_t*>("default"),
+			self->mHopSize * 2,
+			self->mHopSize,
+			self->mSoundInfo.mSampleRate
+		);
+
+		// Mix all channels for analysis
+		for(unsigned int hopIndex = 0; hopIndex < numHops && !self->mAnalyzerShouldStop; ++hopIndex)
+		{
+			self->mAnalysisProgress = (float)(hopIndex + 1) / (float)numHops;
+			for(unsigned int frameIndex = 0; frameIndex < hopSize; ++frameIndex)
+			{
+				float sum = 0.0f;
+				for(unsigned int channelIndex = 0; channelIndex < numChannels; ++channelIndex)
+				{
+					unsigned int sampleIndex = hopIndex * hopSize * numChannels + frameIndex * numChannels + channelIndex;
+					sum += samples[sampleIndex];
+				}
+				fvec_set_sample(hopBuff, sum / (float)numChannels, frameIndex);
+			}
+
+			//Beat detection
+			aubio_tempo_do(tempo, hopBuff, tempBuff);
+			if(fvec_get_sample(tempBuff, 0))
+			{
+				self->mBeatTimes.push_back(aubio_tempo_get_last_s(tempo));
+			}
+		}
+
+		del_aubio_tempo(tempo);
+		del_fvec(hopBuff);
+
+		self->mAnalyzerRunning = false;
+		return NULL;
 	}
 };
 
 Aubio::Aubio()
 	:mAudioData(0)
 	,mSound(0)
+	,mSoundInfo()
+	,mAnalyzerRunning(false)
+	,mAnalyzerShouldStop(true)
+	,mAnalyzerThread()
+	,mHopSize(512)
 {
 	RTTI_BEGIN
 		RTTI_EXTEND(MOAILuaObject)
@@ -77,6 +187,7 @@ Aubio::Aubio()
 
 Aubio::~Aubio()
 {
+	Impl::stopAnalyzer(this);
 	Impl::disposeSound(mSound);
 	safeArrayDelete(reinterpret_cast<char*&>(mAudioData));
 }
@@ -94,6 +205,9 @@ void Aubio::RegisterLuaFuncs(MOAILuaState& state)
 	luaL_Reg regTable[] = {
 		{ "load", &Impl::load },
 		{ "play", &Impl::play },
+		{ "getProgress", &Impl::getProgress },
+		{ "isDone", &Impl::isDone },
+		{ "getBeats", &Impl::getBeats },
 		{ NULL, NULL }
 	};
 	luaL_register(state, 0, regTable);
