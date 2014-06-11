@@ -1,7 +1,7 @@
-#include "host.h"
-//Avoid redifinition warning
-#undef UNUSED
 #include <aubio.h>
+#include <moai-core/headers.h>
+#include <moai-core/MOAILua.h>
+#include "Aubio.hpp"
 
 void MOAIAubioAppInitialize()
 {
@@ -9,8 +9,10 @@ void MOAIAubioAppInitialize()
 
 void MOAIAubioContextInitialize()
 {
+	REGISTER_LUA_CLASS(Aubio);
 }
 
 void MOAIAubioAppFinalize()
 {
+	aubio_cleanup();
 }

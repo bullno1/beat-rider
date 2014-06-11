@@ -1,3 +1,8 @@
+MOAIUntzSystem.initialize(44100, 1000)
+aubio = Aubio.new()
+aubio:load("assets/8282.ogg")
+aubio:play()
+
 MOAIDebugLines.setStyle ( MOAIDebugLines.PROP_MODEL_BOUNDS, 2, 1, 1, 1 )
 MOAIDebugLines.setStyle ( MOAIDebugLines.PROP_WORLD_BOUNDS, 1, 0.5, 0.5, 0.5 )
 
