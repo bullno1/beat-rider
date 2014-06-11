@@ -99,6 +99,23 @@ public:
 		return 1;
 	}
 
+	static int getOnsets(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "U");
+
+		if(self->mAnalyzerRunning)
+		{
+			state.Push();
+		}
+		else
+		{
+			lua_newtable(L);
+			state.WriteArray(self->mOnsetTimes.size(), self->mOnsetTimes.data());
+		}
+
+		return 1;
+	}
+
 	static void startAnalyzer(Aubio* self)
 	{
 		stopAnalyzer(self);
@@ -130,14 +147,21 @@ public:
 		UInt32 numChannels = soundInfo.mChannels;
 		UInt32 numFrames = soundInfo.mTotalFrames;
 		UInt32 numHops = numFrames / self->mHopSize;
+		UInt32 sampRate = soundInfo.mSampleRate;
 
 		fvec_t* hopBuff = new_fvec(self->mHopSize);
 		fvec_t* tempBuff = new_fvec(2);
+		aubio_onset_t* onset = new_aubio_onset(
+			const_cast<char_t*>("hfc"),
+			hopSize * 2,
+			hopSize,
+			sampRate
+		);
 		aubio_tempo_t* tempo = new_aubio_tempo(
 			const_cast<char_t*>("default"),
-			self->mHopSize * 2,
-			self->mHopSize,
-			self->mSoundInfo.mSampleRate
+			hopSize * 2,
+			hopSize,
+			sampRate
 		);
 
 		// Mix all channels for analysis
@@ -161,9 +185,16 @@ public:
 			{
 				self->mBeatTimes.push_back(aubio_tempo_get_last_s(tempo));
 			}
+			//Onset detection
+			aubio_onset_do(onset, hopBuff, tempBuff);
+			if(fvec_get_sample(tempBuff, 0))
+			{
+				self->mOnsetTimes.push_back(aubio_onset_get_last_s(onset));
+			}
 		}
 
 		del_aubio_tempo(tempo);
+		del_aubio_onset(onset);
 		del_fvec(hopBuff);
 
 		self->mAnalyzerRunning = false;
@@ -208,6 +239,7 @@ void Aubio::RegisterLuaFuncs(MOAILuaState& state)
 		{ "getProgress", &Impl::getProgress },
 		{ "isDone", &Impl::isDone },
 		{ "getBeats", &Impl::getBeats },
+		{ "getOnsets", &Impl::getOnsets },
 		{ NULL, NULL }
 	};
 	luaL_register(state, 0, regTable);

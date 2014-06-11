@@ -31,6 +31,7 @@ private:
 	volatile float mAnalysisProgress;
 	uint_t mHopSize;
 	std::vector<float> mBeatTimes;
+	std::vector<float> mOnsetTimes;
 };
 
 #endif

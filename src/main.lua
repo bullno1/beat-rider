@@ -102,15 +102,16 @@ MOAIInputMgr.device.touch:setCallback(function(event, id, x, y, tapCount)
 	lastX, lastY = x, y
 end)
 
-print(aubio:getBeats())
+print(tostring(aubio:getBeats()))
+print(tostring(aubio:getOnsets()))
 MOAICoroutine.new():run(function()
 	while true do
 		local progress = aubio:getProgress()
 		if aubio:isDone() then
 			local beats = aubio:getBeats()
-			for i, v in ipairs(beats) do
-				print(v)
-			end
+			local onsets = aubio:getOnsets()
+			print(#beats)
+			print(#onsets)
 			break
 		end
 		coroutine.yield()
