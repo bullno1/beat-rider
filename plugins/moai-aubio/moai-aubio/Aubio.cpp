@@ -1,16 +1,7 @@
 #include <moai-core/headers.h>
-#include "Aubio.hpp"
 #include <pthread.h>
-
-template<typename T>
-void safeArrayDelete(T*& ptr)
-{
-	if(ptr)
-	{
-		delete[] ptr;
-		ptr = NULL;
-	}
-}
+#include "Aubio.hpp"
+#include "MP3Codec.hpp"
 
 #define RETURN_NULL_IF_LOADING() if(self->mStatus == Aubio::LOADING) { state.Push(); return 1; }
 
@@ -22,8 +13,8 @@ public:
 		MOAI_LUA_SETUP(Aubio, "US");
 
 		stopAsyncThread(self);
+		self->mAudioData.clear();
 		disposeSound(self->mSound);
-		safeArrayDelete(reinterpret_cast<char*&>(self->mAudioData));
 
 		self->mFilename = state.GetValue(2, "");
 		if(MOAILogMessages::CheckFileExists(self->mFilename.c_str()))
@@ -168,13 +159,14 @@ public:
 		Aubio* self = static_cast<Aubio*>(selfPtr);
 
 		// Load audio
-		if(!UNTZ::Sound::decode(self->mFilename, self->mSoundInfo, &self->mAudioData))
+		self->mAudioData.clear();
+		if(!decodeMP3(self, &reportProgress, self->mFilename, self->mSoundInfo, self->mAudioData))
 		{
 			self->mStatus = FAILED;
 			return NULL;
 		}
 
-		self->mSound = UNTZ::Sound::create(self->mSoundInfo, self->mAudioData, false);
+		self->mSound = UNTZ::Sound::create(self->mSoundInfo, self->mAudioData.data(), false);
 
 
 		// Reset old feature buffers
@@ -187,7 +179,7 @@ public:
 
 		// Extract some book keeping info
 		uint_t hopSize = self->mHopSize;
-		const float* samples = self->mAudioData;
+		const FloatVec& samples = self->mAudioData;
 
 		UNTZ::SoundInfo& soundInfo = self->mSoundInfo;
 		UInt32 numChannels = soundInfo.mChannels;
@@ -223,7 +215,7 @@ public:
 		// Mix all channels for analysis
 		for(unsigned int hopIndex = 0; hopIndex < numHops && !self->mAsyncThreadShouldStop; ++hopIndex)
 		{
-			self->mAsyncThreadProgress = (float)(hopIndex + 1) / (float)numHops;
+			self->mAsyncThreadProgress = 0.5 + (float)(hopIndex + 1) / (float)numHops / 2.0f;
 			for(unsigned int frameIndex = 0; frameIndex < hopSize; ++frameIndex)
 			{
 				float sum = 0.0f;
@@ -274,6 +266,13 @@ public:
 		return NULL;
 	}
 
+	static bool reportProgress(void* context, float progress)
+	{
+		Aubio* self = reinterpret_cast<Aubio*>(context);
+		self->mAsyncThreadProgress = progress / 2.0f;//decoding is considered half of the workload
+		return !self->mAsyncThreadShouldStop;
+	}
+
 	static void disposeSound(UNTZ::Sound*& sound)
 	{
 		if(sound)
@@ -285,7 +284,7 @@ public:
 };
 
 Aubio::Aubio()
-	:mAudioData(0)
+	:mAudioData()
 	,mSound(0)
 	,mSoundInfo()
 	,mAsyncThreadShouldStop(true)
@@ -301,7 +300,6 @@ Aubio::~Aubio()
 {
 	Impl::stopAsyncThread(this);
 	Impl::disposeSound(mSound);
-	safeArrayDelete(reinterpret_cast<char*&>(mAudioData));
 }
 
 void Aubio::RegisterLuaClass(MOAILuaState& state)

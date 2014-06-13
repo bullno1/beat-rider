@@ -33,7 +33,7 @@ private:
 	typedef std::map<std::string, FloatVec> SpectralDescriptions;
 
 	// Untz audio
-	float* mAudioData;
+	FloatVec mAudioData;
 	UNTZ::Sound* mSound;
 	UNTZ::SoundInfo mSoundInfo;
 	// Threading

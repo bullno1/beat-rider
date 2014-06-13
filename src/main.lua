@@ -1,13 +1,10 @@
-print("Init Untz")
 MOAIUntzSystem.initialize(44100, 1000)
-print("Create aubio")
 aubio = Aubio.new()
 aubio:setHopSize(1024)
 print(aubio:getHopSize())
 aubio:addSpectralDescriptor("energy")
-print("Load")
-aubio:load("assets/8282.ogg")
-print("ok")
+local start = MOAISim.getDeviceTime()
+aubio:load("assets/DontSayGoodbye.mp3")
 
 MOAIDebugLines.setStyle ( MOAIDebugLines.PROP_MODEL_BOUNDS, 2, 1, 1, 1 )
 --MOAIDebugLines.setStyle ( MOAIDebugLines.TEXT_BOX, 2, 1, 1, 1 )
@@ -120,7 +117,7 @@ local txt = MOAITextBox.new()
 txt:setFont(font)
 txt:setTextSize(23)
 txt:setYFlip(true)
-txt:setRect(0, -100, 100, 0)
+txt:setRect(0, -100, 200, 0)
 txt:setAlignment(MOAITextBox.LEFT_JUSTIFY, MOAITextBox.LEFT_JUSTIFY)
 txt:setString("Test")
 txt:setLoc(-devWidth / 2, devHeight / 2)
@@ -128,12 +125,20 @@ overlay:insertProp(txt)
 
 print(tostring(aubio:getBeats()))
 print(tostring(aubio:getOnsets()))
+local statusToText = {
+	"Ready",
+	"Loading",
+	"Loaded",
+	"Failed"
+}
 MOAICoroutine.new():run(function()
 	repeat
 		local progress = aubio:getProgress()
 		local status = aubio:getStatus()
-		txt:setString("Analyzing: "..tostring(math.floor(progress * 100)) .. "%")
+		txt:setString(statusToText[status + 1].." "..tostring(math.floor(progress * 100)) .. "%")
 		if status == Aubio.STATUS_LOADED then
+			local finish = MOAISim.getDeviceTime()
+			print("Total time:", finish - start)
 			local beats = aubio:getBeats()
 			local onsets = aubio:getOnsets()
 			local energies = aubio:getSpectralDescription("energy")

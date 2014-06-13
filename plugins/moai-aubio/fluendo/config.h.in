@@ -1,0 +1,25 @@
+#ifndef CMAKE_CONFIG_H
+#define CMAKE_CONFIG_H
+
+#cmakedefine USE_ARMV6_SIMD
+
+#cmakedefine USE_ARM_NEON
+
+#cmakedefine USE_ARM_VFP
+
+/* Version number of package */
+#define VERSION "0.10.27.1"
+
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+/* #  undef WORDS_BIGENDIAN */
+# endif
+#endif
+
+#endif
