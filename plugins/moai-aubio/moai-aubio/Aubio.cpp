@@ -12,56 +12,38 @@ void safeArrayDelete(T*& ptr)
 	}
 }
 
+#define RETURN_NULL_IF_LOADING() if(self->mStatus == Aubio::LOADING) { state.Push(); return 1; }
+
 class Aubio::Impl
 {
 public:
-	static void disposeSound(UNTZ::Sound*& sound)
-	{
-		if(sound)
-		{
-			UNTZ::Sound::dispose(sound);
-			sound = 0;
-		}
-	}
-
 	static int load(lua_State* L)
 	{
 		MOAI_LUA_SETUP(Aubio, "US");
 
-		stopAnalyzer(self);
+		stopAsyncThread(self);
 		disposeSound(self->mSound);
 		safeArrayDelete(reinterpret_cast<char*&>(self->mAudioData));
 
-		STLString filename = state.GetValue(2, "");
-		if(MOAILogMessages::CheckFileExists(filename.c_str()))
+		self->mFilename = state.GetValue(2, "");
+		if(MOAILogMessages::CheckFileExists(self->mFilename.c_str()))
 		{
-			if(UNTZ::Sound::decode(filename, self->mSoundInfo, &self->mAudioData))
-			{
-				self->mSound = UNTZ::Sound::create(self->mSoundInfo, self->mAudioData, false);
-				startAnalyzer(self);
-				state.Push(true);
-			}
-			else
-			{
-				state.Push(false);
-			}
+			startAsyncThread(self);
 		}
 		else
 		{
-			state.Push(false);
+			self->mStatus = Aubio::FAILED;
 		}
 
-		return 1;
+		return 0;
 	}
 
 	static int play(lua_State* L)
 	{
 		MOAI_LUA_SETUP(Aubio, "U");
+		RETURN_NULL_IF_LOADING();
 
-		if(self->mSound)
-		{
-			self->mSound->play();
-		}
+		self->mSound->play();
 
 		return 0;
 	}
@@ -70,55 +52,42 @@ public:
 	{
 		MOAI_LUA_SETUP(Aubio, "U");
 
-		state.Push(self->mAnalysisProgress);
+		state.Push(self->mAsyncThreadProgress);
 		return 1;
 	}
 
-	static int isDone(lua_State* L)
+	static int getStatus(lua_State* L)
 	{
 		MOAI_LUA_SETUP(Aubio, "U");
 
-		state.Push(!self->mAnalyzerRunning);
+		state.Push(self->mStatus);
 		return 1;
 	}
 
 	static int getBeats(lua_State* L)
 	{
 		MOAI_LUA_SETUP(Aubio, "U");
+		RETURN_NULL_IF_LOADING();
 
-		if(self->mAnalyzerRunning)
-		{
-			state.Push();
-		}
-		else
-		{
-			lua_newtable(L);
-			state.WriteArray(self->mBeatTimes.size(), self->mBeatTimes.data());
-		}
-
+		lua_newtable(L);
+		state.WriteArray(self->mBeatTimes.size(), self->mBeatTimes.data());
 		return 1;
 	}
 
 	static int getOnsets(lua_State* L)
 	{
 		MOAI_LUA_SETUP(Aubio, "U");
+		RETURN_NULL_IF_LOADING();
 
-		if(self->mAnalyzerRunning)
-		{
-			state.Push();
-		}
-		else
-		{
-			lua_newtable(L);
-			state.WriteArray(self->mOnsetTimes.size(), self->mOnsetTimes.data());
-		}
-
+		lua_newtable(L);
+		state.WriteArray(self->mOnsetTimes.size(), self->mOnsetTimes.data());
 		return 1;
 	}
 
 	static int addSpectralDescriptor(lua_State* L)
 	{
 		MOAI_LUA_SETUP(Aubio, "US");
+		RETURN_NULL_IF_LOADING();
 
 		//TODO: validate descriptor name
 		self->mSpectralDescs[state.GetValue(2, "")] = FloatVec();
@@ -129,6 +98,7 @@ public:
 	static int removeSpectralDescriptor(lua_State* L)
 	{
 		MOAI_LUA_SETUP(Aubio, "US");
+		RETURN_NULL_IF_LOADING();
 
 		SpectralDescriptions::iterator itr = self->mSpectralDescs.find(state.GetValue(2, ""));
 		if(itr != self->mSpectralDescs.end())
@@ -142,6 +112,7 @@ public:
 	static int getSpectralDescription(lua_State* L)
 	{
 		MOAI_LUA_SETUP(Aubio, "US");
+		RETURN_NULL_IF_LOADING();
 
 		SpectralDescriptions::iterator itr = self->mSpectralDescs.find(state.GetValue(2, ""));
 		if(itr != self->mSpectralDescs.end())
@@ -157,27 +128,37 @@ public:
 		return 1;
 	}
 
-	static void startAnalyzer(Aubio* self)
+	static void startAsyncThread(Aubio* self)
 	{
-		stopAnalyzer(self);
-		self->mAnalyzerShouldStop = false;
-		self->mAnalysisProgress = 0.0f;
-		pthread_create(&self->mAnalyzerThread, NULL, &analyzerThreadEntry, self);
+		self->mAsyncThreadShouldStop = false;
+		self->mAsyncThreadProgress = 0.0f;
+		self->mStatus = LOADING;
+		pthread_create(&self->mAsyncThread, NULL, &asyncThreadEntry, self);
 	}
 
-	static void stopAnalyzer(Aubio* self)
+	static void stopAsyncThread(Aubio* self)
 	{
-		if(self->mAnalyzerRunning)
+		if(self->mStatus == LOADING)
 		{
-			self->mAnalyzerShouldStop = true;
-			pthread_join(self->mAnalyzerThread, NULL);
+			self->mAsyncThreadShouldStop = true;
+			pthread_join(self->mAsyncThread, NULL);
+			self->mStatus = READY;
 		}
 	}
 
-	static void* analyzerThreadEntry(void* selfPtr)
+	static void* asyncThreadEntry(void* selfPtr)
 	{
 		Aubio* self = static_cast<Aubio*>(selfPtr);
-		self->mAnalyzerRunning = true;
+
+		// Load audio
+		if(!UNTZ::Sound::decode(self->mFilename, self->mSoundInfo, &self->mAudioData))
+		{
+			self->mStatus = FAILED;
+			return NULL;
+		}
+
+		self->mSound = UNTZ::Sound::create(self->mSoundInfo, self->mAudioData, false);
+
 
 		// Reset old feature buffers
 		self->mBeatTimes.clear();
@@ -223,9 +204,9 @@ public:
 		cvec_t* fftBuff = new_cvec(hopSize * 2);
 
 		// Mix all channels for analysis
-		for(unsigned int hopIndex = 0; hopIndex < numHops && !self->mAnalyzerShouldStop; ++hopIndex)
+		for(unsigned int hopIndex = 0; hopIndex < numHops && !self->mAsyncThreadShouldStop; ++hopIndex)
 		{
-			self->mAnalysisProgress = (float)(hopIndex + 1) / (float)numHops;
+			self->mAsyncThreadProgress = (float)(hopIndex + 1) / (float)numHops;
 			for(unsigned int frameIndex = 0; frameIndex < hopSize; ++frameIndex)
 			{
 				float sum = 0.0f;
@@ -268,8 +249,21 @@ public:
 		del_aubio_onset(onset);
 		del_fvec(hopBuff);
 
-		self->mAnalyzerRunning = false;
+		if(!self->mAsyncThreadShouldStop)//if thread was not interrupted
+		{
+			self->mStatus = LOADED;
+		}
+
 		return NULL;
+	}
+
+	static void disposeSound(UNTZ::Sound*& sound)
+	{
+		if(sound)
+		{
+			UNTZ::Sound::dispose(sound);
+			sound = 0;
+		}
 	}
 };
 
@@ -277,9 +271,8 @@ Aubio::Aubio()
 	:mAudioData(0)
 	,mSound(0)
 	,mSoundInfo()
-	,mAnalyzerRunning(false)
-	,mAnalyzerShouldStop(true)
-	,mAnalyzerThread()
+	,mAsyncThreadShouldStop(true)
+	,mStatus(READY)
 	,mHopSize(512)
 {
 	RTTI_BEGIN
@@ -289,13 +282,18 @@ Aubio::Aubio()
 
 Aubio::~Aubio()
 {
-	Impl::stopAnalyzer(this);
+	Impl::stopAsyncThread(this);
 	Impl::disposeSound(mSound);
 	safeArrayDelete(reinterpret_cast<char*&>(mAudioData));
 }
 
 void Aubio::RegisterLuaClass(MOAILuaState& state)
 {
+	state.SetField(-1, "STATUS_READY", READY);
+	state.SetField(-1, "STATUS_LOADING", LOADING);
+	state.SetField(-1, "STATUS_LOADED", LOADED);
+	state.SetField(-1, "STATUS_FAILED", FAILED);
+
 	luaL_Reg regTable[] = {
 		{ NULL, NULL }
 	};
@@ -308,7 +306,7 @@ void Aubio::RegisterLuaFuncs(MOAILuaState& state)
 		{ "load", &Impl::load },
 		{ "play", &Impl::play },
 		{ "getProgress", &Impl::getProgress },
-		{ "isDone", &Impl::isDone },
+		{ "getStatus", &Impl::getStatus },
 		{ "getBeats", &Impl::getBeats },
 		{ "getOnsets", &Impl::getOnsets },
 		{ "addSpectralDescriptor", &Impl::addSpectralDescriptor },

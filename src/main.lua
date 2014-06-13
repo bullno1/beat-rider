@@ -1,10 +1,16 @@
+print("Init Untz")
 MOAIUntzSystem.initialize(44100, 1000)
+print("Create aubio")
 aubio = Aubio.new()
 aubio:addSpectralDescriptor("energy")
+print("Load")
 aubio:load("assets/8282.ogg")
-aubio:play()
+print("ok")
 
 MOAIDebugLines.setStyle ( MOAIDebugLines.PROP_MODEL_BOUNDS, 2, 1, 1, 1 )
+--MOAIDebugLines.setStyle ( MOAIDebugLines.TEXT_BOX, 2, 1, 1, 1 )
+--MOAIDebugLines.setStyle ( MOAIDebugLines.TEXT_BOX_LAYOUT, 2, 1, 1, 1 )
+--MOAIDebugLines.setStyle ( MOAIDebugLines.TEXT_BOX_BASELINES, 2, 1, 1, 1 )
 MOAIDebugLines.setStyle ( MOAIDebugLines.PROP_WORLD_BOUNDS, 1, 0.5, 0.5, 0.5 )
 
 local viewport = MOAIViewport.new ()
@@ -15,54 +21,57 @@ MOAIGfxDevice.getFrameBuffer():setClearDepth(true)
 
 local layer = MOAILayer.new ()
 layer:setViewport ( viewport )
-MOAIRenderMgr.setRenderTable{layer}
+local overlay = MOAILayer2D.new()
+overlay:setViewport(viewport)
+MOAIRenderMgr.setRenderTable{layer, overlay}
 
 camera = MOAICamera.new ()
---camera:setLoc(0, 0, camera:getFocalLength(MOAIGfxDevice.getViewSize()))
+camera:setLoc(0, 100, camera:getFocalLength(MOAIGfxDevice.getViewSize()))
 layer:setCamera(camera)
 
-local mesh = MOAIMesh.new()
-local vbo = MOAIVertexBuffer.new()
-local vertexFormat = MOAIVertexFormat.new ()
-local texture = MOAITexture.new()
-texture:load("assets/moai.png")
-texture:setWrap(true)
+local function makeMesh(graph)
+	local mesh = MOAIMesh.new()
+	local vbo = MOAIVertexBuffer.new()
+	local vertexFormat = MOAIVertexFormat.new ()
+	local texture = MOAITexture.new()
+	texture:load("assets/moai.png")
+	texture:setWrap(true)
 
-vertexFormat:declareCoord(1, MOAIVertexFormat.GL_FLOAT, 3)
-vertexFormat:declareUV(2, MOAIVertexFormat.GL_FLOAT, 2)
-vertexFormat:declareColor(3, MOAIVertexFormat.GL_UNSIGNED_BYTE)
+	vertexFormat:declareCoord(1, MOAIVertexFormat.GL_FLOAT, 3)
+	vertexFormat:declareUV(2, MOAIVertexFormat.GL_FLOAT, 2)
+	vertexFormat:declareColor(3, MOAIVertexFormat.GL_UNSIGNED_BYTE)
 
-vbo:setFormat(vertexFormat)
-local graph = {0, 10, 30, 50, 10, 50}
+	vbo:setFormat(vertexFormat)
 
-local unit = 50
+	local unit = 50
 
-vbo:reserveVerts(#graph * 2)
-for index, y in ipairs(graph) do
-	-- position
-	vbo:writeFloat(unit, y, -index * unit)
-	-- uv
-	vbo:writeFloat(1, 1 - index)
-	-- color
-	vbo:writeColor32(1, 1, 1)
+	vbo:reserveVerts(#graph * 2)
+	for index, y in ipairs(graph) do
+		-- position
+		vbo:writeFloat(unit, y, -index * unit)
+		-- uv
+		vbo:writeFloat(1, 1 - index)
+		-- color
+		vbo:writeColor32(1, 1, 1)
 
-	-- position
-	vbo:writeFloat(-unit, y, -index * unit)
-	-- uv
-	vbo:writeFloat(0, 1 - index)
-	-- color
-	vbo:writeColor32(1, 1, 1)
+		-- position
+		vbo:writeFloat(-unit, y, -index * unit)
+		-- uv
+		vbo:writeFloat(0, 1 - index)
+		-- color
+		vbo:writeColor32(1, 1, 1)
+	end
+
+	vbo:bless()
+	mesh:setTexture(texture)
+	mesh:setVertexBuffer(vbo)
+	mesh:setPrimType(MOAIMesh.GL_TRIANGLE_STRIP)
+
+	local prop = MOAIProp.new ()
+	prop:setDeck ( mesh )
+	layer:insertProp ( prop )
+	prop:setDepthTest(MOAIProp.DEPTH_TEST_LESS)
 end
-
-vbo:bless()
-mesh:setTexture(texture)
-mesh:setVertexBuffer(vbo)
-mesh:setPrimType(MOAIMesh.GL_TRIANGLE_STRIP)
-
-local prop = MOAIProp.new ()
-prop:setDeck ( mesh )
-layer:insertProp ( prop )
-prop:setDepthTest(MOAIProp.DEPTH_TEST_LESS)
 
 local loader = require "mesh"
 local mesh = loader("assets/spaceship.dae")
@@ -103,12 +112,26 @@ MOAIInputMgr.device.touch:setCallback(function(event, id, x, y, tapCount)
 	lastX, lastY = x, y
 end)
 
+local font = MOAIFont.new()
+font:load("assets/hermit.ttf")
+local txt = MOAITextBox.new()
+txt:setFont(font)
+txt:setTextSize(23)
+txt:setYFlip(true)
+txt:setRect(0, -100, 100, 0)
+txt:setAlignment(MOAITextBox.LEFT_JUSTIFY, MOAITextBox.LEFT_JUSTIFY)
+txt:setString("Test")
+txt:setLoc(-devWidth / 2, devHeight / 2)
+overlay:insertProp(txt)
+
 print(tostring(aubio:getBeats()))
 print(tostring(aubio:getOnsets()))
 MOAICoroutine.new():run(function()
-	while true do
+	repeat
 		local progress = aubio:getProgress()
-		if aubio:isDone() then
+		local status = aubio:getStatus()
+		txt:setString("Analyzing: "..tostring(math.floor(progress * 100)) .. "%")
+		if status == Aubio.STATUS_LOADED then
 			local beats = aubio:getBeats()
 			local onsets = aubio:getOnsets()
 			local energies = aubio:getSpectralDescription("energy")
@@ -117,8 +140,10 @@ MOAICoroutine.new():run(function()
 			print(#onsets)
 			print(#energies)
 			print(yolo)
+			makeMesh(energies)
+			aubio:play()
 			break
 		end
 		coroutine.yield()
-	end
+	until status ~= Aubio.STATUS_LOADING
 end)

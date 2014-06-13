@@ -12,6 +12,14 @@
 class Aubio: public virtual MOAILuaObject
 {
 	class Impl;
+	enum Status
+	{
+		READY,
+		LOADING,
+		LOADED,
+		FAILED
+	};
+
 public:
 	friend class Impl;
 
@@ -29,11 +37,12 @@ private:
 	UNTZ::Sound* mSound;
 	UNTZ::SoundInfo mSoundInfo;
 	// Threading
-	volatile bool mAnalyzerRunning;
-	volatile bool mAnalyzerShouldStop;
-	pthread_t mAnalyzerThread;
+	volatile bool mAsyncThreadShouldStop;
+	volatile Status mStatus;
+	pthread_t mAsyncThread;
 	// Analysis
-	volatile float mAnalysisProgress;
+	STLString mFilename;
+	volatile float mAsyncThreadProgress;
 	uint_t mHopSize;
 	FloatVec mBeatTimes;
 	FloatVec mOnsetTimes;
