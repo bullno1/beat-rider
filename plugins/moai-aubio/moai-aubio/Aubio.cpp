@@ -128,6 +128,23 @@ public:
 		return 1;
 	}
 
+	static int getHopSize(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "U");
+
+		state.Push(self->mHopSize);
+		return 1;
+	}
+
+	static int setHopSize(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "UN");
+
+		//TODO: validate whether hop size is a power of two
+		self->mHopSize = state.GetValue<uint_t>(2, 512);
+		return 0;
+	}
+
 	static void startAsyncThread(Aubio* self)
 	{
 		self->mAsyncThreadShouldStop = false;
@@ -305,6 +322,8 @@ void Aubio::RegisterLuaFuncs(MOAILuaState& state)
 	luaL_Reg regTable[] = {
 		{ "load", &Impl::load },
 		{ "play", &Impl::play },
+		{ "getHopSize", &Impl::getHopSize },
+		{ "setHopSize", &Impl::setHopSize },
 		{ "getProgress", &Impl::getProgress },
 		{ "getStatus", &Impl::getStatus },
 		{ "getBeats", &Impl::getBeats },
