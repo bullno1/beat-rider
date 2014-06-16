@@ -4,7 +4,7 @@
 -- http://getmoai.com
 --==============================================================
 
-package.path = "lua/?.lua"
+package.path = "lua/?.lua;lua/?/init.lua"
 
 ----------------------------------------------------------------
 -- this function supports all the ways a user could call print
