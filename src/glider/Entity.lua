@@ -2,13 +2,25 @@ local m = {}
 
 local destroyedEntities = {}
 local numDestroyedEntities = 0
+local anonPresetCount = 0
 
 -- Create an entity from preset
-function m.create(preset)
-	local preset = type(preset) == "string" and require(preset) or preset
+function m.create(presetDesc)
+	local presetDescType = type(presetDesc)
+	local entityPreset
+	if presetDescType == "string" then
+		entityPreset = require(presetDesc)
+	elseif presetDescType == "function" then
+		anonPresetCount = anonPresetCount + 1
+		entityPreset = preset("anonymousPreset#"..anonPresetCount, presetDesc)
+	elseif presetDescType == "table" then
+		entityPreset = presetDesc
+	else
+		error("Unknown preset description type '"..presetDescType.."'")
+	end
 
 	local components = {}
-	for _, component in ipairs(preset.components) do
+	for _, component in ipairs(entityPreset.components) do
 		components[component.name] = {}
 	end
 	local entity = setmetatable(
@@ -16,11 +28,11 @@ function m.create(preset)
 			__components = components,
 			alive = true
 		},
-		preset.metatable
+		entityPreset.metatable
 	)
 	entity:onCreate()
 
-	for name, value in pairs(preset.defaultProps) do
+	for name, value in pairs(entityPreset.defaultProps) do
 		entity["set"..name](entity, value)
 	end
 

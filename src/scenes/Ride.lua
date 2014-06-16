@@ -27,9 +27,7 @@ return scene(..., function()
 		X = -viewWidth / 2
 		Y = viewHeight / 2
 
-	--entity(
-		--preset("RideController", function()
-			--components { "RideController" }
-		--end)
-	--)
+	entity(function()
+		components { "RideController" }
+	end)
 end)
