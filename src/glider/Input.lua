@@ -6,7 +6,9 @@ local multiplex
 
 function m.init(config)
 	local device = MOAIInputMgr.device
-	m.keyboard = multiplex(device.keyboard)
+	if device.keyboard then
+		m.keyboard = multiplex(device.keyboard)
+	end
 end
 
 multiplex = function(sensor)
