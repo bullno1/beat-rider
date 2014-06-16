@@ -12,21 +12,21 @@ return scene(..., function()
 	entity "glider.presets.Camera3D"
 		LayerName = "Objects"
 		Z = 30
-	
+
 	entity "glider.presets.Mesh"
 		LayerName = "Objects"
 		DeckName = "mesh:spaceship.dae"
-	
+
 	entity "glider.presets.Text"
 		LayerName = "GUI"
 		FontName = "hermit.ttf"
 		FontSize = 20
-		TextRect = { 0, -100, 100, 0 }
+		TextRect = { 0, 0, 100, -100 }
 		TextAlignment = { "top", "left" }
 		Text = "Yo"
 		X = -viewWidth / 2
 		Y = viewHeight / 2
-	
+
 	--entity(
 		--preset("RideController", function()
 			--components { "RideController" }

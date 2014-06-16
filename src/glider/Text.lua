@@ -24,10 +24,12 @@ return component(..., function(i)
 
 	property("TextRect",
 		function(self, ent)
-			return {ent:getTransform():getRect()}
+			local xmin, ymax, xmax, ymin = ent:getTransform():getRect()
+			return {xmin, ymin, xmax, ymax}
 		end,
 		function(self, ent, val)
-			ent:getTransform():setRect(unpack(val))
+			local xmin, ymax, xmax, ymin = unpack(val)
+			ent:getTransform():setRect(xmin, ymin, xmax, ymax)
 		end
 	)
 	
