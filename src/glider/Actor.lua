@@ -33,6 +33,13 @@ return component(..., function()
 		action:start(self.action)
 	end)
 
+	query("spawnCoroutine", function(self, ent, func, ...)
+		local coro = MOAICoroutine.new()
+		coro:run(func, ...)
+		coro:attach(self.action)
+		return coro
+	end)
+
 	local yield = coroutine.yield
 	tick = function(ent)
 		local update = ent.update

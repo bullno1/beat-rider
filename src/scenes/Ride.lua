@@ -17,7 +17,11 @@ return scene(..., function()
 		LayerName = "Objects"
 		DeckName = "mesh:spaceship.dae"
 
-	entity "glider.presets.Text"
+	entity(function()
+		copyFrom "glider.presets.Text"
+		components { "glider.Tracked" }
+
+		Name = "txtProgress"
 		LayerName = "GUI"
 		FontName = "hermit.ttf"
 		FontSize = 20
@@ -26,8 +30,11 @@ return scene(..., function()
 		Text = "Yo"
 		X = -viewWidth / 2
 		Y = viewHeight / 2
+	end)
 
 	entity(function()
 		components { "RideController" }
+
+		UpdatePhase = "GameLogic"
 	end)
 end)
