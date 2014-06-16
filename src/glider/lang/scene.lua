@@ -1,0 +1,59 @@
+local Entity = require "glider.Entity"
+local Director = require "glider.Director"
+
+global("scene", function(name, descriptor)
+	return function(...)
+		local currentViewport
+		local currentLayer
+		local currentEntity
+
+		local dsl = setmetatable({}, {__index = _G})
+		local descEnv = setmetatable({}, {
+			__index = dsl,
+			__metatable = 0,
+			__newindex = function(table, key, value)
+				assertp(currentEntity ~= nil, "No entity to set property")
+				assertp(currentEntity["set"..key] ~= nil, "Property '"..key.."' is non-existent or readonly")
+				return currentEntity["set"..key](currentEntity, value)
+			end
+		})
+
+		function dsl.layer(name)
+			assertp(currentViewport ~= nil, "No viewport defined")
+			currentLayer = MOAILayer2D.new()
+			currentLayer:setViewport(currentViewport)
+			Director.addLayer(name, currentLayer)
+			return currentLayer
+		end
+
+		function dsl.layer3D(name)
+			assertp(currentViewport ~= nil, "No viewport defined")
+			currentLayer = MOAILayer.new()
+			currentLayer:setViewport(currentViewport)
+			Director.addLayer(name, currentLayer)
+			MOAIGfxDevice.getFrameBuffer():setClearDepth(true)
+			return currentLayer
+		end
+
+		function dsl.sort(sortMode)
+			currentLayer:setSortMode(MOAILayer2D["SORT_"..sortMode])
+		end
+
+		function dsl.entity(preset)
+			currentEntity = Entity.create(preset)
+			return currentEntity
+		end
+
+		function dsl.viewport(...)
+			currentViewport = MOAIViewport.new()
+			currentViewport:setSize(...)
+		end
+
+		function dsl.viewScale(x, y)
+			currentViewport:setScale(x, y)
+		end
+
+		setfenv(descriptor, descEnv)
+		return descriptor(...)
+	end
+end)

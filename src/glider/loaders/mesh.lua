@@ -1,9 +1,12 @@
+local Asset = require "glider.Asset"
+
 return function(name)
 	local sources = {}
 	local sourcesSemantics = {}
 
-	local xml = MOAIXmlParser.parseFile(name)
-	local importSettings = dofile(name..".lua")
+	local path = "./assets/meshes/"..name
+	local xml = MOAIXmlParser.parseFile(path)
+	local importSettings = dofile(path..".lua")
 	local transform = MOAITransform.new()
 	transform:setLoc(0, 0, 0)
 	transform:setRot(unpack(importSettings.rotation or {0, 0, 0}))
@@ -56,5 +59,8 @@ return function(name)
 	local mesh = MOAIMesh.new()
 	mesh:setVertexBuffer(vbo)
 	mesh:setPrimType(MOAIMesh.GL_TRIANGLES)
+	if importSettings.texture then
+		mesh:setTexture(Asset.get("texture:"..importSettings.texture))
+	end
 	return mesh
 end
