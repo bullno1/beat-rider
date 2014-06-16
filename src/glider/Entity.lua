@@ -1,5 +1,6 @@
 local m = {}
 
+local aliveEntities = {}
 local destroyedEntities = {}
 local numDestroyedEntities = 0
 local anonPresetCount = 0
@@ -23,13 +24,8 @@ function m.create(presetDesc)
 	for _, component in ipairs(entityPreset.components) do
 		components[component.name] = {}
 	end
-	local entity = setmetatable(
-		{
-			__components = components,
-			alive = true
-		},
-		entityPreset.metatable
-	)
+	local entity = setmetatable(components,	entityPreset.metatable)
+	aliveEntities[entity] = true
 	m.send(entity, "onCreate")
 
 	for name, value in pairs(entityPreset.defaultProps) do
@@ -41,8 +37,8 @@ end
 
 -- Destroy an entity
 function m.destroy(ent)
-	if ent.alive then
-		ent.alive = false
+	if aliveEntities[ent] then
+		aliveEntities[ent] = nil
 
 		local linkedEntities = ent.linkedEntities
 		if linkedEntities then
@@ -87,6 +83,12 @@ function m.send(entity, msg, ...)
 	local handler = entity[msg]
 	if handler then
 		return handler(entity, ...)
+	end
+end
+
+function m.destroyAll()
+	for entity in pairs(aliveEntities) do
+		m.destroy(entity)
 	end
 end
 

@@ -41,14 +41,14 @@ global("preset", function(name, descriptor)
 
 				assert(entityProto[getterName] == nil, "Property "..name.." is already defined")
 				entityProto[getterName] = function(self)
-					local componentInstance = self.__components[component.name]
+					local componentInstance = self[component.name]
 					return getter(componentInstance, self)
 				end
 
 				if setter then
 					assert(entityProto[setterName] == nil, "Property "..name.." is already defined")
 					entityProto[setterName] = function(self, value)
-						local componentInstance = self.__components[component.name]
+						local componentInstance = self[component.name]
 						return setter(componentInstance, self, value)
 					end
 				end
@@ -60,7 +60,7 @@ global("preset", function(name, descriptor)
 				assert(entityProto[name] == nil, "Method "..name.." already exists")
 
 				entityProto[name] = function(self, ...)
-					local componentInstance = self.__components[component.name]
+					local componentInstance = self[component.name]
 					return handler(componentInstance, self, ...)
 				end
 			end
@@ -164,7 +164,7 @@ global("preset", function(name, descriptor)
 	for msgName, handlerTable in pairs(msgHandlers) do
 		entityProto[msgName] = function(self, ...)
 			for _, handler in ipairs(handlerTable) do
-				local componentInstance = self.__components[handler.componentName]
+				local componentInstance = self[handler.componentName]
 				local handlerFunc = handler.handlerFunc
 				handlerFunc(componentInstance, self, ...)
 			end

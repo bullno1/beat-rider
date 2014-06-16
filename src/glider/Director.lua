@@ -1,3 +1,5 @@
+local Entity = require "glider.Entity"
+
 local m = {}
 
 local updatePhases = {}
@@ -37,6 +39,8 @@ local yield = coroutine.yield
 changeSceneIfNeeded = function()
 	while true do
 		if nextScene ~= nil then
+			Entity.destroyAll()
+
 			print("Changing to scene '"..nextScene.."'")
 			-- Stop all actions
 			for _, phase in pairs(updatePhases) do
