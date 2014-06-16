@@ -30,7 +30,7 @@ function m.create(presetDesc)
 		},
 		entityPreset.metatable
 	)
-	entity:onCreate()
+	m.send(entity, "onCreate")
 
 	for name, value in pairs(entityPreset.defaultProps) do
 		entity["set"..name](entity, value)
@@ -72,7 +72,7 @@ function m.initManager()
 		while true do
 			for i = 1, numDestroyedEntities do
 				local ent = destroyedEntities[i]
-				ent:onDestroy()
+				m.send(ent, "onDestroy")
 
 				destroyedEntities[i] = nil
 			end
@@ -81,6 +81,13 @@ function m.initManager()
 			yield()
 		end
 	end)
+end
+
+function m.send(entity, msg, ...)
+	local handler = entity[msg]
+	if handler then
+		return handler(entity, ...)
+	end
 end
 
 return m
