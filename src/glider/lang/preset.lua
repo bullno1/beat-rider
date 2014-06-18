@@ -67,6 +67,9 @@ global("preset", function(name, descriptor)
 		end
 	end
 
+	addComponent("glider.Tracked")
+	table.remove(components)
+
 	function dsl.components(components)
 		for _, component in ipairs(components) do
 			addComponent(component)

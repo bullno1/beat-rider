@@ -3,19 +3,14 @@ local Entity = require "glider.Entity"
 return component(..., function()
 	property("Name",
 		function(self, ent)
-			return self.name
+			return Entity._getName(ent)
 		end,
 		function(self, ent, val)
-			if val ~= nil then
-				Entity._nameEntity(ent, val)
-			elseif self.name ~= nil then
-				Entity._unnameEntity(self.name)
-			end
-			self.name = val
+			return Entity._setName(ent, val)
 		end
 	)
 
 	msg("onDestroy", function(self, ent)
-		ent:setName()
+		Entity._setName(ent, nil)
 	end)
 end)

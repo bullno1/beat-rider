@@ -4,7 +4,8 @@ local aliveEntities = {}
 local destroyedEntities = {}
 local numDestroyedEntities = 0
 local anonPresetCount = 0
-local namedEntities = setmetatable({}, {__mode = 'v'})
+local nameToEntity = {}
+local entityToName = {}
 
 -- Create an entity from preset
 function m.create(presetDesc)
@@ -94,16 +95,25 @@ function m.destroyAll()
 end
 
 function m.getByName(name)
-	return namedEntities[name]
+	return nameToEntity[name]
 end
 
-function m._nameEntity(entity, name)
-	assert(namedEntities[name] == nil, "Name '"..name.."' is already taken")
-	namedEntities[name] = entity
+function m._setName(entity, name)
+	local oldName = entityToName[entity]
+	if oldName ~= nil then
+		nameToEntity[oldName] = nil
+	end
+
+	if name ~= nil then
+		assert(nameToEntity[name] == nil, "Name '"..name.."' is already taken")
+		nameToEntity[name] = entity
+	end
+
+	entityToName[entity] = name
 end
 
-function m._unnameEntity(name)
-	namedEntities[name] = nil
+function m._getName(entity)
+	return entityToName[entity]
 end
 
 return m

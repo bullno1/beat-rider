@@ -19,19 +19,12 @@ return scene(..., function()
 		sort "NONE"
 		useCamera "RideCamera"
 
-	entity(function()
-		copyFrom"glider.presets.Mesh"
-		components {"glider.Tracked"}
-
+	entity "glider.presets.Mesh"
 		Name = "Ship"
 		LayerName = "Objects"
 		DeckName = "mesh:spaceship.dae"
 
-	end)
-	entity(function()
-		copyFrom "glider.presets.Text"
-		components { "glider.Tracked" }
-
+	entity "glider.presets.Text"
 		Name = "txtProgress"
 		LayerName = "GUI"
 		FontName = "hermit.ttf"
@@ -41,7 +34,6 @@ return scene(..., function()
 		Text = "Yo"
 		X = -viewWidth / 2
 		Y = viewHeight / 2
-	end)
 
 	entity(function()
 		components { "RideController" }
