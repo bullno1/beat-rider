@@ -15,7 +15,7 @@ return component(..., function()
 			local prop = ent:getProp()
 			local anim = self.anim
 
-			ent:setDeckName(val)
+			ent:setDeckName("sprite:"..val)
 			prop:setIndex(1)
 			anim:stop()
 			anim:setLink(1, sprite.animCurve, prop, MOAIProp2D.ATTR_INDEX)

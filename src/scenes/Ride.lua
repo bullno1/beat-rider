@@ -3,20 +3,31 @@ return scene(..., function()
 	viewport(viewWidth, viewHeight)
 	viewScale(viewWidth, viewHeight)
 
+	camera "Visualizer"
+
+	camera3D "RideCamera"
+		Z = 30
+
+	layer "Visualizer"
+		sort "NONE"
+		useCamera "Visualizer"
+
 	layer "GUI"
 		sort "NONE"
 	
 	layer3D "Objects"
 		sort "NONE"
+		useCamera "RideCamera"
 
-	entity "glider.presets.Camera3D"
-		LayerName = "Objects"
-		Z = 30
+	entity(function()
+		copyFrom"glider.presets.Mesh"
+		components {"glider.Tracked"}
 
-	entity "glider.presets.Mesh"
+		Name = "Ship"
 		LayerName = "Objects"
 		DeckName = "mesh:spaceship.dae"
 
+	end)
 	entity(function()
 		copyFrom "glider.presets.Text"
 		components { "glider.Tracked" }
@@ -25,7 +36,7 @@ return scene(..., function()
 		LayerName = "GUI"
 		FontName = "hermit.ttf"
 		FontSize = 20
-		TextRect = { 0, 0, 100, -100 }
+		TextRect = { 0, 0, 200, -200 }
 		TextAlignment = { "top", "left" }
 		Text = "Yo"
 		X = -viewWidth / 2

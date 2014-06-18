@@ -136,6 +136,15 @@ public:
 		return 0;
 	}
 
+	static int getPosition(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "U");
+		RETURN_NULL_IF_LOADING();
+
+		state.Push(self->mSound->getPosition());
+		return 1;
+	}
+
 	static void startAsyncThread(Aubio* self)
 	{
 		self->mAsyncThreadShouldStop = false;
@@ -167,7 +176,6 @@ public:
 		}
 
 		self->mSound = UNTZ::Sound::create(self->mSoundInfo, self->mAudioData.data(), false);
-
 
 		// Reset old feature buffers
 		self->mBeatTimes.clear();
@@ -329,6 +337,7 @@ void Aubio::RegisterLuaFuncs(MOAILuaState& state)
 		{ "addSpectralDescriptor", &Impl::addSpectralDescriptor },
 		{ "removeSpectralDescriptor", &Impl::removeSpectralDescriptor },
 		{ "getSpectralDescription", &Impl::getSpectralDescription },
+		{ "getPosition", &Impl::getPosition },
 		{ NULL, NULL }
 	};
 	luaL_register(state, 0, regTable);

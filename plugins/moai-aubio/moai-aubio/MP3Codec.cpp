@@ -1,22 +1,62 @@
 #include "MP3Codec.hpp"
-extern "C"
-{
-	#include <mp3tl.h>
-}
 #include <limits>
+#include <mpg123.h>
+#include <stdlib.h>
 
-gsize slurp(const char* path, const guint8** buff)
-{
-	FILE* file;
-	file = fopen(path, "rb");
-	if(file == NULL) return 0;
-	fseek(file, 0, SEEK_END);
-	long fileSize = ftell(file);
-	rewind(file);
-	void* buffer = malloc(fileSize);
-	fread(buffer, 1, fileSize, file);
-	*buff = (const guint8*)buffer;
-	return fileSize;
+#define FAIL_IF_FALSE(cond) if(!(cond)) { return false; }
+
+namespace {
+	ssize_t vfsRead(void* file, void* buff, size_t size)
+	{
+		return fread(buff, 1, size, (FILE*)file);
+	}
+
+	off_t vfsSeek(void* file, off_t offset, int whence)
+	{
+		return fseek((FILE*)file, offset, whence);
+	}
+
+	class ScopedFile
+	{
+	public:
+		ScopedFile(const char* name, const char* mode)
+			:mFile(fopen(name, mode))
+		{}
+
+		~ScopedFile()
+		{
+			fclose(mFile);
+		}
+
+		operator FILE*() const
+		{
+			return mFile;
+		}
+	private:
+		FILE* mFile;
+	};
+
+	class ScopedDecoder
+	{
+	public:
+		ScopedDecoder()
+		{
+			int err;
+			mDecoder = mpg123_new(NULL, &err);
+		}
+
+		~ScopedDecoder()
+		{
+			mpg123_delete(mDecoder);
+		}
+
+		operator mpg123_handle*() const
+		{
+			return mDecoder;
+		}
+	private:
+		mpg123_handle* mDecoder;
+	};
 }
 
 bool decodeMP3(
@@ -27,65 +67,61 @@ bool decodeMP3(
 	std::vector<float>& samples
 )
 {
-	const std::string extension = path.substr(path.find_last_of('.') + 1);
-	if(extension != "mp3") return false;
+	int err;
+	ScopedDecoder decoder;
+	FAIL_IF_FALSE(decoder != NULL);
 
-	// Read whole file into a buffer
-	const guint8* fileBuff = 0;
-	gsize fileSize = slurp(path.c_str(), &fileBuff);
-	// Create decoder
-	std::vector<guint8> frameBuff;//temporary buffer to hold a frame
-	Bit_stream_struc* bs = bs_new();
-	bs_set_data(bs, fileBuff, fileSize);
-	mp3tl* decoder = mp3tl_new(bs, MP3TL_MODE_16BIT);
-	const fr_header* header;
-	bool success = true;
-	std::size_t oldSize = samples.size();
-	gint offset = 0;
-	gint length = 0;
+	ScopedFile file(path.c_str(), "rb");
+	FAIL_IF_FALSE(mpg123_replace_reader_handle(decoder, &vfsRead, &vfsSeek, NULL) == MPG123_OK);
+	FAIL_IF_FALSE(mpg123_open_handle(decoder, file) == MPG123_OK);
 
-	while(bs_bits_avail(bs))
+	long rate;
+	int channels, encodings;
+	FAIL_IF_FALSE(mpg123_getformat(decoder, &rate, &channels, &encodings) == MPG123_OK);
+	FAIL_IF_FALSE(mpg123_format_none(decoder) == MPG123_OK);
+	FAIL_IF_FALSE(mpg123_format(decoder, rate, channels, MPG123_ENC_SIGNED_16) == MPG123_OK);
+
+	size_t oldSize = samples.size();
+	std::vector<s16> buff;
+	buff.resize(mpg123_outblock(decoder));
+	size_t bytesRead;
+	bool done = false;
+	long oldPos = ftell(file);
+	fseek(file, 0, SEEK_END);
+	long fileSize = ftell(file);
+	fseek(file, oldPos, SEEK_SET);
+
+	while(!done)
 	{
-		mp3tl_gather_frame(decoder, &offset, &length);
-		mp3tl_sync(decoder);
-		mp3tl_decode_header(decoder, &header);
-		size_t frameSize = header->channels * (header->sample_size >> 3) * header->frame_samples;
-		frameBuff.resize(frameSize);
-		Mp3TlRetcode result = mp3tl_decode_frame(decoder, frameBuff.data(), frameSize);
+		int err = mpg123_read(decoder, reinterpret_cast<unsigned char*>(buff.data()), buff.size() * sizeof(s16), &bytesRead);
 
-		if(result != MP3TL_ERR_OK)
+		size_t numSamples = bytesRead / sizeof(s16);
+		for(size_t i = 0; i < numSamples; ++i)
 		{
-			success = false;
-			break;
-		}
-		else
-		{
-			//convert 16bit integer samples to floating point samples
-			const s16* frameSamples = reinterpret_cast<const s16*>(frameBuff.data());
-			const size_t numSamples = frameBuff.size() / (sizeof(s16) / sizeof(guint8));
-			for(size_t i = 0; i < numSamples; ++i)
-			{
-				samples.push_back((float)frameSamples[i] / (float)std::numeric_limits<s16>::max());
-			}
+			samples.push_back((float)buff[i] / (float)std::numeric_limits<s16>::max());
 		}
 
-		float progress = (float)(bs_pos(bs) >> 3) / (float)fileSize;
-		if(!progressCallback(context, progress))
+		switch(err)
 		{
-			success = false;
-			break;
+			case MPG123_OK:
+				break;
+			case MPG123_DONE:
+				done = true;
+				break;
+			default:
+				return false;
 		}
+
+		float progress = (float)ftell(file) / (float)fileSize;
+		FAIL_IF_FALSE(progressCallback(context, progress));
 	}
 
-	soundInfo.mBitsPerSample = sizeof(float) << 3;
-	soundInfo.mChannels = header->channels;
-	soundInfo.mTotalFrames = (samples.size() - oldSize) / header->channels;
-	soundInfo.mSampleRate = (double)header->sample_rate;
-	soundInfo.mLength = (double)soundInfo.mTotalFrames / soundInfo.mSampleRate;
+	size_t numSamples = samples.size() - oldSize;
+	soundInfo.mChannels = channels;
+	soundInfo.mTotalFrames = (samples.size() - oldSize) / channels;
+	soundInfo.mBitsPerSample = 32;
+	soundInfo.mSampleRate = rate;
+	soundInfo.mLength = (double)soundInfo.mTotalFrames / (double)rate;
 
-	mp3tl_free(decoder);
-	bs_free(bs);
-	free((void*)fileBuff);
-
-	return success;
+	return true;
 }

@@ -12,7 +12,8 @@ local m = {}
 m.appFinalize = Event.new()
 
 function m.start(config)
-	MOAISim.setLoopFlags(MOAISim.LOOP_FLAGS_MULTISTEP)
+	MOAISim.clearLoopFlags()
+	MOAISim.setLoopFlags(MOAISim.LOOP_FLAGS_FIXED)
 
 	config = config or {}
 	Entity.initManager(config.Entity or {})

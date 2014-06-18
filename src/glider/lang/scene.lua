@@ -18,6 +18,17 @@ global("scene", function(name, descriptor)
 			end
 		})
 
+		function dsl.camera(name)
+			local camera = dsl.entity("glider.presets.Camera")
+			Director.addCamera(name, camera)
+		end
+
+		function dsl.camera3D(name)
+			local camera = dsl.entity("glider.presets.Camera3D")
+			Director.addCamera(name, camera)
+			return camera
+		end
+
 		function dsl.layer(name)
 			assertp(currentViewport ~= nil, "No viewport defined")
 			currentLayer = MOAILayer2D.new()
@@ -33,6 +44,13 @@ global("scene", function(name, descriptor)
 			Director.addLayer(name, currentLayer)
 			MOAIGfxDevice.getFrameBuffer():setClearDepth(true)
 			return currentLayer
+		end
+
+		function dsl.useCamera(name)
+			assertp(currentLayer ~= nil, "No layer defined")
+			local camera = Director.getCamera(name)
+			assertp(camera ~= nil, "Camera does not exists")
+			currentLayer:setCamera(camera:getCamera())
 		end
 
 		function dsl.sort(sortMode)

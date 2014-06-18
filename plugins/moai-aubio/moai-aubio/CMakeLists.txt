@@ -7,4 +7,4 @@ add_library(moai-aubio STATIC
 	MP3Codec.cpp
 )
 target_include_directories(moai-aubio PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../)
-target_link_libraries(moai-aubio aubio fluendo moai-core moai-util moai-sim zlcore untz)
+target_link_libraries(moai-aubio aubio mpg123 moai-core moai-util moai-sim zlcore untz)

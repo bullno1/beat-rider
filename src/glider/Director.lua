@@ -5,6 +5,7 @@ local m = {}
 local updatePhases = {}
 local renderTable = {}
 local layerMap = {}
+local cameras = setmetatable({}, {__mode='v'})
 
 local changeSceneIfNeeded
 function m.init(config)
@@ -72,6 +73,14 @@ end
 
 function m.getLayer(name)
 	return layerMap[name]
+end
+
+function m.addCamera(name, camera)
+	cameras[name] = camera
+end
+
+function m.getCamera(name)
+	return cameras[name]
 end
 
 return m
