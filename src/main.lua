@@ -6,7 +6,7 @@ glider.start{
 			"GameLogic",
 			"Visual"
 		},
-		firstScene = os.getenv("FIRST_SCENE") or "scenes.Ride"
+		firstScene = os.getenv("FIRST_SCENE") or "scenes.Analyze"
 	},
 	DebugLines = {
 		PARTITION_CELLS        = false,

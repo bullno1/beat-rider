@@ -68,17 +68,21 @@ function m.initManager()
 	local yield = coroutine.yield
 	MOAICoroutine.new():run(function()
 		while true do
-			for i = 1, numDestroyedEntities do
-				local ent = destroyedEntities[i]
-				m.send(ent, "onDestroy")
-
-				destroyedEntities[i] = nil
-			end
-			numDestroyedEntities = 0
-
+			m.cleanupEntities()
 			yield()
 		end
 	end)
+end
+
+function m.cleanupEntities()
+	for i = 1, numDestroyedEntities do
+		local ent = destroyedEntities[i]
+		m._setName(ent, nil)
+		m.send(ent, "onDestroy")
+
+		destroyedEntities[i] = nil
+	end
+	numDestroyedEntities = 0
 end
 
 function m.send(entity, msg, ...)

@@ -1,89 +1,71 @@
 local Entity = require "glider.Entity"
-local Action = require "glider.Action"
 local Director = require "glider.Director"
-local MessagePack = require "glider.MessagePack"
 
 return component(..., function()
 	depends "glider.Actor"
 
-	local process
+	local ride
 	msg("onCreate", function(self, ent)
-		local filePath = "assets/sfx/8282.mp3"
-		ent:spawnCoroutine(process, self, ent, filePath)
+		ent:spawnCoroutine(ride, self, ent)
 	end)
 
-	local TIME_SCALE = 300
+	local TIME_SCALE = 400
 	local createMarkers
-	process = function(self, ent, path)
-		local aubio = Aubio.new()
-		aubio:setHopSize(1024)
-		aubio:addSpectralDescriptor("energy")
-
-		-- Check if analysis result was cached
-		local absPath = MOAIFileSystem.getAbsoluteFilePath(path)
-		local cacheFilePath = MOAIEnvironment.cacheDirectory.."/"..absPath:gsub("/","-")..".cache"
-		local cache
-		if MOAIFileSystem.checkFileExists(cacheFilePath) then
-			-- TODO: timestamp check
-			print("Found cache at", cacheFilePath)
-			local cacheFile = io.open(cacheFilePath, "rb")
-			local success, cacheContent = pcall(MessagePack.unpack, cacheFile:read("*a"))
-			if success and type(cacheContent) == "table" and cacheContent.beats ~= nil and cacheContent.onsets ~= nil then
-				self.cacheContent = cacheContent
-				cache = cacheContent
-				aubio:skipAnalysis()
-				print("Cache validated. Analysis skipped")
-			end
-			cacheFile:close()
-		end
-
-		aubio:load("assets/sfx/8282.mp3")
-
-		-- Wait until audio is loaded and analyzed (if needed)
-		local txtProgress = Entity.getByName "txtProgress"
-		local status
-		repeat
-			status = aubio:getStatus()
-			local progress = aubio:getProgress()
-			txtProgress:setText("Loading "..tostring(math.floor(progress * 100)) .. "%")
-
-			coroutine.yield()
-		until status ~= Aubio.STATUS_LOADING
-
-		if status ~= Aubio.STATUS_LOADED then
-			return
-		end
-
-		-- Create visualizations
-		local beats, onsets
-
-		if cache then
-			beats = cache.beats
-			onsets = cache.onsets
-		else
-			beats = aubio:getBeats()
-			onsets = aubio:getOnsets()
-			cache = {
-				beats = beats,
-				onsets = onsets
-			}
-			local cacheFile = io.open(cacheFilePath, "w+b")
-			print("Writing cache")
-			cacheFile:write(MessagePack.pack(cache))
-			cacheFile:close()
-		end
-
-		for i, time in ipairs(beats) do
+	ride = function(self, ent, path)
+		local sceneData = Director.getSceneData()
+		-- Create event markers
+		for i, time in ipairs(sceneData.beats) do
 			local marker = Entity.create("presets.Marker")
-			marker:setX(time * 300)
+			marker:setX(time * TIME_SCALE)
 			marker:setY(-200)
 		end
 
-		for i, time in ipairs(onsets) do
+		for i, time in ipairs(sceneData.onsets) do
 			local marker = Entity.create("presets.Marker")
-			marker:setX(time * 300)
+			marker:setX(time * TIME_SCALE)
 			marker:setY(-150)
 		end
+		local mesh = MOAIMesh.new()
+		local vbo = MOAIVertexBuffer.new()
+		local format = MOAIVertexFormat.new()
+		format:declareCoord(1, MOAIVertexFormat.GL_FLOAT, 3)
+		vbo:setFormat(format)
+
+		local aubio = sceneData.aubio
+		local sampRate, numFrames = aubio:getAudioInfo()
+		vbo:reserveVerts(#sceneData.energies)
+		for index, y in ipairs(sceneData.energies) do
+			vbo:writeFloat(index * 1024 / sampRate * TIME_SCALE, y, 0)
+		end
+		vbo:bless()
+		mesh:setVertexBuffer(vbo)
+		mesh:setPrimType(MOAIMesh.GL_LINE_STRIP)
+		local vsh = [[
+			attribute vec4 position;
+
+			uniform mat4 transform;
+
+			void main()
+			{
+				gl_Position = position * transform;
+			}
+		]]
+		local fsh = [[
+			void main()
+			{
+				gl_FragColor = vec4(1, 1, 1, 1);
+			}
+		]]
+		local shader = MOAIShader.new()
+		shader:load(vsh, fsh)
+		shader:reserveUniforms(1)
+		shader:declareUniform(1, "transform", MOAIShader.UNIFORM_WORLD_VIEW_PROJ)
+		shader:setVertexAttribute(1, "position")
+		mesh:setShader(shader)
+
+		local meshInstance = Entity.create("glider.presets.Mesh")
+		meshInstance:getProp():setDeck(mesh)
+		meshInstance:setLayerName("Visualizer")
 
 		-- Move visualizations with music
 		aubio:play()
@@ -92,14 +74,15 @@ return component(..., function()
 		local pos = aubio:getPosition()
 		local ship = Entity.getByName("Ship")
 		local step = 0
+		local halfWidth = MOAIGfxDevice.getViewSize() / 2
+		local txtProgress = Entity.getByName("txtProgress")
 		while true do
 			local position = aubio:getPosition()
 			pos = pos + step
 			local err = aubio:getPosition() - pos
 			txtProgress:setText(fmt:format(position, MOAISim.getPerformance(), math.abs(err), step))
-			camera:setX(pos * TIME_SCALE)
-			ship:setZRotation(pos * 10)
-			--pos = pos + 0.1 * err
+			camera:setX(pos * TIME_SCALE + halfWidth)
+			pos = pos + 0.001 * err
 			step = coroutine.yield()
 		end
 	end

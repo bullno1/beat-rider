@@ -9,8 +9,4 @@ return component(..., function()
 			return Entity._setName(ent, val)
 		end
 	)
-
-	msg("onDestroy", function(self, ent)
-		Entity._setName(ent, nil)
-	end)
 end)

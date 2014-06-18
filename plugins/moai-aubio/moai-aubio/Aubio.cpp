@@ -153,6 +153,17 @@ public:
 		return 1;
 	}
 
+	static int getAudioInfo(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "U");
+		RETURN_NULL_IF_LOADING();
+
+		UNTZ::SoundInfo& soundInfo = self->mSoundInfo;
+		state.Push(soundInfo.mSampleRate);
+		state.Push(soundInfo.mTotalFrames);
+		return 2;
+	}
+
 	static void startAsyncThread(Aubio* self)
 	{
 		self->mAsyncThreadShouldStop = false;
@@ -362,6 +373,7 @@ void Aubio::RegisterLuaFuncs(MOAILuaState& state)
 		{ "removeSpectralDescriptor", &Impl::removeSpectralDescriptor },
 		{ "getSpectralDescription", &Impl::getSpectralDescription },
 		{ "getPosition", &Impl::getPosition },
+		{ "getAudioInfo", &Impl::getAudioInfo },
 		{ NULL, NULL }
 	};
 	luaL_register(state, 0, regTable);

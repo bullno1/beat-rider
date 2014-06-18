@@ -36,11 +36,16 @@ function m.changeScene(sceneName, ...)
 	sceneParams = {...}
 end
 
+function m.getSceneData()
+	return unpack(sceneParams)
+end
+
 local yield = coroutine.yield
 changeSceneIfNeeded = function()
 	while true do
 		if nextScene ~= nil then
 			Entity.destroyAll()
+			Entity.cleanupEntities()
 
 			print("Changing to scene '"..nextScene.."'")
 			-- Stop all actions
@@ -54,7 +59,6 @@ changeSceneIfNeeded = function()
 			local sceneFunc = require(nextScene)
 			sceneFunc(unpack(sceneParams))
 			nextScene = nil
-			sceneParams = nil
 		end
 		yield()
 	end

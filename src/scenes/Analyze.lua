@@ -3,21 +3,8 @@ return scene(..., function()
 	viewport(viewWidth, viewHeight)
 	viewScale(viewWidth, viewHeight)
 
-	camera "Visualizer"
-
-	camera3D "RideCamera"
-		Z = 30
-
-	layer "Visualizer"
-		sort "NONE"
-		useCamera "Visualizer"
-
 	layer "GUI"
-		sort "NONE"
-	
-	layer3D "Objects"
-		sort "NONE"
-		useCamera "RideCamera"
+		sort "None"
 
 	entity "glider.presets.Text"
 		Name = "txtProgress"
@@ -29,15 +16,9 @@ return scene(..., function()
 		Text = "Yo"
 		X = -viewWidth / 2
 		Y = viewHeight / 2
-
-	entity "glider.presets.Mesh"
-		Name = "Ship"
-		LayerName = "Objects"
-		DeckName = "mesh:spaceship.dae"
-
+	
 	entity(function()
-		components { "RideController" }
-
+		components { "AnalyzeController" }
 		UpdatePhase = "GameLogic"
 	end)
 end)
