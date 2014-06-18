@@ -41,6 +41,7 @@ private:
 	volatile Status mStatus;
 	pthread_t mAsyncThread;
 	// Analysis
+	bool mSkipAnalysis;
 	STLString mFilename;
 	volatile float mAsyncThreadProgress;
 	uint_t mHopSize;

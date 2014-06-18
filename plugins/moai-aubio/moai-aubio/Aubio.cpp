@@ -55,6 +55,14 @@ public:
 		return 1;
 	}
 
+	static int mSkipAnalysis(lua_State* L)
+	{
+		MOAI_LUA_SETUP(Aubio, "U");
+
+		self->mSkipAnalysis = state.GetValue(2, true);
+		return 0;
+	}
+
 	static int getBeats(lua_State* L)
 	{
 		MOAI_LUA_SETUP(Aubio, "U");
@@ -166,17 +174,33 @@ public:
 	static void* asyncThreadEntry(void* selfPtr)
 	{
 		Aubio* self = static_cast<Aubio*>(selfPtr);
+		self->mStatus = processFile(self);
+		return NULL;
+	}
 
+	static Status processFile(Aubio* self)
+	{
 		// Load audio
 		self->mAudioData.clear();
 		if(!decodeMP3(self, &reportProgress, self->mFilename, self->mSoundInfo, self->mAudioData))
 		{
-			self->mStatus = FAILED;
-			return NULL;
+			return FAILED;
 		}
 
 		self->mSound = UNTZ::Sound::create(self->mSoundInfo, self->mAudioData.data(), false);
 
+		if(self->mSkipAnalysis)
+		{
+			return LOADED;
+		}
+		else
+		{
+			return analyzeAudio(self);
+		}
+	}
+
+	static Status analyzeAudio(Aubio* self)
+	{
 		// Reset old feature buffers
 		self->mBeatTimes.clear();
 		self->mOnsetTimes.clear();
@@ -223,7 +247,9 @@ public:
 		// Mix all channels for analysis
 		for(unsigned int hopIndex = 0; hopIndex < numHops && !self->mAsyncThreadShouldStop; ++hopIndex)
 		{
-			self->mAsyncThreadProgress = 0.5 + (float)(hopIndex + 1) / (float)numHops / 2.0f;
+			float progressOffset = self->mSkipAnalysis ? 0.0f : 0.5f;
+			float progressScale = self->mSkipAnalysis ? 1.0f : 0.5f;
+			self->mAsyncThreadProgress = progressOffset + ((float)(hopIndex + 1) / (float)numHops) * progressScale;
 			for(unsigned int frameIndex = 0; frameIndex < hopSize; ++frameIndex)
 			{
 				float sum = 0.0f;
@@ -266,18 +292,14 @@ public:
 		del_aubio_onset(onset);
 		del_fvec(hopBuff);
 
-		if(!self->mAsyncThreadShouldStop)//if thread was not interrupted
-		{
-			self->mStatus = LOADED;
-		}
-
-		return NULL;
+		return self->mAsyncThreadShouldStop ? FAILED : LOADED;
 	}
 
 	static bool reportProgress(void* context, float progress)
 	{
 		Aubio* self = reinterpret_cast<Aubio*>(context);
-		self->mAsyncThreadProgress = progress / 2.0f;//decoding is considered half of the workload
+		float progressScale = self->mSkipAnalysis ? 1.0f : 0.5f;//decoding is considered half of the workload
+		self->mAsyncThreadProgress = progress * progressScale;
 		return !self->mAsyncThreadShouldStop;
 	}
 
@@ -297,6 +319,7 @@ Aubio::Aubio()
 	,mSoundInfo()
 	,mAsyncThreadShouldStop(true)
 	,mStatus(READY)
+	,mSkipAnalysis(false)
 	,mHopSize(512)
 {
 	RTTI_BEGIN
@@ -328,6 +351,7 @@ void Aubio::RegisterLuaFuncs(MOAILuaState& state)
 	luaL_Reg regTable[] = {
 		{ "load", &Impl::load },
 		{ "play", &Impl::play },
+		{ "skipAnalysis", &Impl::mSkipAnalysis },
 		{ "getHopSize", &Impl::getHopSize },
 		{ "setHopSize", &Impl::setHopSize },
 		{ "getProgress", &Impl::getProgress },
