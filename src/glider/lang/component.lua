@@ -14,12 +14,6 @@ global("component", function(name, descriptor)
 
 	function descEnv.property(name, getter, setter)
 		assert(props[name] == nil, "Property "..name.." already exists")
-		if getter then
-			setfenv(getter, _G)
-		end
-		if setter then
-			setfenv(setter, _G)
-		end
 
 		if getter == nil and setter == nil then--simple property
 			local propValue
@@ -38,19 +32,19 @@ global("component", function(name, descriptor)
 	function descEnv.msg(name, handler)
 		assert(msgs[name] == nil, "Message handler "..name.." already exists")
 
-		setfenv(handler, _G)
 		msgs[name] = handler
 	end
 
 	function descEnv.query(name, handler)
 		assert(queries[name] == nil, "Query handler "..name.." already exists")
 
-		setfenv(handler, _G)
 		queries[name] = handler
 	end
 
 	setfenv(descriptor, descEnv)
 	descriptor()
+	-- Disallow further modifications
+	getmetatable(descEnv).__newindex = _G
 
 	return {
 		name = name,

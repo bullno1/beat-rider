@@ -14,6 +14,6 @@ setmetatable(_G, {
 		error("Trying to access non-existent global variable '" .. index.."'", 2)
 	end,
 	__newindex = function(table, index)
-		error("Cannot implicitly create global variable "..index, 2)
+		error("Cannot implicitly create global variable '"..index.."'", 2)
 	end
 })
