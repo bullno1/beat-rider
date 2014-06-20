@@ -6,6 +6,7 @@ return component(..., function()
 	depends "glider.Actor"
 
 	local TIME_SCALE = 1000
+	local TRACK_WIDTH = 230
 
 	msg("onCreate", function(self, ent)
 		ent:spawnCoroutine(ride, self, ent)
@@ -25,14 +26,31 @@ return component(..., function()
 		meshInstance:setLayerName("Objects")
 		meshInstance:setYScale(heightScale)
 
+		local lastTime = 0
+		local lastX = 0
+		local clusterDistance = 0.2
 		for i, note in ipairs(sceneData.notes) do
 			local marker = Entity.create("presets.Note")
 			local time = note.time
 			local score = note.score
 
+			-- X is random with clustering
+			local x
+			if time - lastTime < clusterDistance then
+				x = lastX
+			else
+				x = math.random(3) - 2 --3 lanes
+			end
+
+			marker:setX(x * TRACK_WIDTH / 3)
+			lastX = x
+			lastTime = time
+
+			-- Y is based on track's height at that time
 			local heightSlot = math.floor(time * sampRate / hopSize + 0.5) + 1
-			marker:setX((math.random(3) - 2) * 100)
 			marker:setY(sceneData.track[heightSlot] * heightScale + 20)
+
+			-- Z is based on time
 			marker:setZ(-time * TIME_SCALE)
 			
 			if not score then
@@ -80,8 +98,8 @@ return component(..., function()
 		for index, y in ipairs(data) do
 			local distance = (index  - 1) * hopSize / sampRate * TIME_SCALE
 
-			vbo:writeFloat(200, y, -distance)
-			vbo:writeFloat(-200, y, -distance)
+			vbo:writeFloat(TRACK_WIDTH / 2, y, -distance)
+			vbo:writeFloat(-TRACK_WIDTH / 2, y, -distance)
 		end
 		vbo:bless()
 
