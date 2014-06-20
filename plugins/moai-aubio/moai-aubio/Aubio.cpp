@@ -4,6 +4,7 @@
 #include "MP3Codec.hpp"
 
 #define RETURN_NULL_IF_LOADING() if(self->mStatus == Aubio::LOADING) { state.Push(); return 1; }
+#define LOG ZLLog::Print
 
 class Aubio::Impl
 {
@@ -166,6 +167,7 @@ public:
 
 	static void startAsyncThread(Aubio* self)
 	{
+		LOG("Aubio: Starting async thread\n");
 		self->mAsyncThreadShouldStop = false;
 		self->mAsyncThreadProgress = 0.0f;
 		self->mStatus = LOADING;
@@ -174,9 +176,11 @@ public:
 
 	static void stopAsyncThread(Aubio* self)
 	{
+		LOG("Aubio: Stopping async thread\n");
 		if(self->mStatus == LOADING)
 		{
 			self->mAsyncThreadShouldStop = true;
+			LOG("Aubio: Waiting for async thread to terminate\n");
 			pthread_join(self->mAsyncThread, NULL);
 			self->mStatus = READY;
 		}
@@ -184,8 +188,10 @@ public:
 
 	static void* asyncThreadEntry(void* selfPtr)
 	{
+		LOG("Aubio: Async thread started\n");
 		Aubio* self = static_cast<Aubio*>(selfPtr);
 		self->mStatus = processFile(self);
+		LOG("Aubio: Async thread ended\n");
 		return NULL;
 	}
 
@@ -193,15 +199,20 @@ public:
 	{
 		// Load audio
 		self->mAudioData.clear();
+		LOG("Aubio: Loading audio\n");
 		if(!decodeMP3(self, &reportProgress, self->mFilename, self->mSoundInfo, self->mAudioData))
 		{
+			LOG("Aubio: Loading failed\n");
 			return FAILED;
 		}
 
+		LOG("Aubio: Loading done\n");
 		self->mSound = UNTZ::Sound::create(self->mSoundInfo, self->mAudioData.data(), false);
+		LOG("Aubio: Created UNTZ sound\n");
 
 		if(self->mSkipAnalysis)
 		{
+			LOG("Aubio: skipped analysis\n");
 			return LOADED;
 		}
 		else
@@ -212,6 +223,7 @@ public:
 
 	static Status analyzeAudio(Aubio* self)
 	{
+		LOG("Aubio: Started analysis\n");
 		// Reset old feature buffers
 		self->mBeatTimes.clear();
 		self->mOnsetTimes.clear();
@@ -303,6 +315,7 @@ public:
 		del_aubio_onset(onset);
 		del_fvec(hopBuff);
 
+		LOG("Aubio: Finished analysis\n");
 		return self->mAsyncThreadShouldStop ? FAILED : LOADED;
 	}
 
@@ -336,12 +349,14 @@ Aubio::Aubio()
 	RTTI_BEGIN
 		RTTI_EXTEND(MOAILuaObject)
 	RTTI_END
+	LOG("Created aubio\n");
 }
 
 Aubio::~Aubio()
 {
 	Impl::stopAsyncThread(this);
 	Impl::disposeSound(mSound);
+	LOG("Destroyed aubio\n");
 }
 
 void Aubio::RegisterLuaClass(MOAILuaState& state)
