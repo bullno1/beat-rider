@@ -28,7 +28,9 @@ return component(..., function()
 
 		local lastTime = 0
 		local lastX = 0
-		local clusterDistance = 0.2
+		local clusterDistance = 0.5
+		local clusterLimit = 3
+		local currentClusterSize = 0
 		for i, note in ipairs(sceneData.notes) do
 			local marker = Entity.create("presets.Note")
 			local time = note.time
@@ -36,10 +38,12 @@ return component(..., function()
 
 			-- X is random with clustering
 			local x
-			if time - lastTime < clusterDistance then
+			if time - lastTime < clusterDistance and currentClusterSize < clusterLimit - 1 then
 				x = lastX
+				currentClusterSize = currentClusterSize + 1
 			else
 				x = math.random(3) - 2 --3 lanes
+				currentClusterSize = 0
 			end
 
 			marker:setX(x * TRACK_WIDTH / 3)
