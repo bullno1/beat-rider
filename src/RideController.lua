@@ -1,17 +1,17 @@
 local Entity = require "glider.Entity"
 local Director = require "glider.Director"
+local Asset = require "glider.Asset"
 
 return component(..., function()
 	depends "glider.Actor"
 
-	local ride
+	local TIME_SCALE = 1000
+
 	msg("onCreate", function(self, ent)
 		ent:spawnCoroutine(ride, self, ent)
 	end)
 
-	local TIME_SCALE = 400
-	local createMarkers
-	ride = function(self, ent, path)
+	function ride(self, ent, path)
 		local sceneData = Director.getSceneData()
 		-- Create event markers
 		for i, time in ipairs(sceneData.beats) do
@@ -20,52 +20,27 @@ return component(..., function()
 			marker:setY(-200)
 		end
 
-		for i, time in ipairs(sceneData.onsets) do
-			local marker = Entity.create("presets.Marker")
-			marker:setX(time * TIME_SCALE)
-			marker:setY(-150)
-		end
-		local mesh = MOAIMesh.new()
-		local vbo = MOAIVertexBuffer.new()
-		local format = MOAIVertexFormat.new()
-		format:declareCoord(1, MOAIVertexFormat.GL_FLOAT, 3)
-		vbo:setFormat(format)
-
+		local heightScale = 200
 		local aubio = sceneData.aubio
-		local sampRate, numFrames = aubio:getAudioInfo()
-		vbo:reserveVerts(#sceneData.energies)
-		for index, y in ipairs(sceneData.energies) do
-			vbo:writeFloat(index * 1024 / sampRate * TIME_SCALE, y, 0)
-		end
-		vbo:bless()
-		mesh:setVertexBuffer(vbo)
-		mesh:setPrimType(MOAIMesh.GL_LINE_STRIP)
-		local vsh = [[
-			attribute vec4 position;
-
-			uniform mat4 transform;
-
-			void main()
-			{
-				gl_Position = position * transform;
-			}
-		]]
-		local fsh = [[
-			void main()
-			{
-				gl_FragColor = vec4(1, 1, 1, 1);
-			}
-		]]
-		local shader = MOAIShader.new()
-		shader:load(vsh, fsh)
-		shader:reserveUniforms(1)
-		shader:declareUniform(1, "transform", MOAIShader.UNIFORM_WORLD_VIEW_PROJ)
-		shader:setVertexAttribute(1, "position")
-		mesh:setShader(shader)
+		local hopSize = aubio:getHopSize()
+		local sampRate, _numFrames = aubio:getAudioInfo()
+		local mesh = generateTrack(sceneData.energies, sampRate, hopSize)
 
 		local meshInstance = Entity.create("glider.presets.Mesh")
 		meshInstance:getProp():setDeck(mesh)
-		meshInstance:setLayerName("Visualizer")
+		meshInstance:setLayerName("Objects")
+		meshInstance:setYScale(heightScale)
+
+		for i, time in ipairs(sceneData.onsets) do
+			local marker = Entity.create("presets.Marker")
+			local heightSlot = math.floor(time * sampRate / hopSize + 0.5) + 1
+			--camera:setX(pos * TIME_SCALE + halfWidth)
+			marker:setX((math.random(3) - 2) * 100)
+			marker:setY(sceneData.energies[heightSlot] * heightScale + 20)
+			marker:setZ(-time * TIME_SCALE)
+			marker:getProp():setBillboard(true)
+			marker:setDepthTest(MOAIProp.DEPTH_TEST_LESS)
+		end
 
 		-- Move visualizations with music
 		aubio:play()
@@ -76,14 +51,50 @@ return component(..., function()
 		local step = 0
 		local halfWidth = MOAIGfxDevice.getViewSize() / 2
 		local txtProgress = Entity.getByName("txtProgress")
+		local rideCamera = Director.getCamera("RideCamera")
+		local ship = Entity.getByName("Ship")
+		rideCamera:getCamera():setAttrLink(MOAITransform.INHERIT_LOC, ship:getProp(), MOAITransform.TRANSFORM_TRAIT)
 		while true do
 			local position = aubio:getPosition()
 			pos = pos + step
 			local err = aubio:getPosition() - pos
 			txtProgress:setText(fmt:format(position, MOAISim.getPerformance(), math.abs(err), step))
+			local heightSlot = math.floor(pos * sampRate / hopSize + 0.5) + 1
 			camera:setX(pos * TIME_SCALE + halfWidth)
+			ship:setY(sceneData.energies[heightSlot] * heightScale + 20)
+			ship:setZ(-pos * TIME_SCALE)
 			pos = pos + 0.001 * err
 			step = coroutine.yield()
 		end
+	end
+
+	function generateTrack(data, sampRate, hopSize)
+		local format = MOAIVertexFormat.new()
+		format:declareCoord(1, MOAIVertexFormat.GL_FLOAT, 3)
+
+		local vbo = MOAIVertexBuffer.new()
+		vbo:setFormat(format)
+
+		vbo:reserveVerts(#data * 2)
+		for index, y in ipairs(data) do
+			local distance = (index  - 1) * hopSize / sampRate * TIME_SCALE
+
+			vbo:writeFloat(200, y, -distance)
+			vbo:writeFloat(-200, y, -distance)
+		end
+		vbo:bless()
+
+		local track = MOAIMesh.new()
+		track:setVertexBuffer(vbo)
+		track:setPrimType(MOAIMesh.GL_TRIANGLE_STRIP)
+		local trackTexture = Asset.get("texture:track.png")
+		trackTexture:setWrap(true)
+		track:setTexture(trackTexture)
+		local textureHeight = select(2, trackTexture:getSize())
+		local trackShader = Asset.get("shader:track")
+		trackShader:setAttr(2, 1 / textureHeight / 4)
+		track:setShader(trackShader)
+
+		return track
 	end
 end)

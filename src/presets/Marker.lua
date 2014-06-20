@@ -2,5 +2,5 @@ return preset(..., function()
 	copyFrom "glider.presets.Sprite"
 
 	SpriteName = "gem"
-	LayerName = "Visualizer"
+	LayerName = "Objects"
 end)

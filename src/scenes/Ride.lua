@@ -6,7 +6,9 @@ return scene(..., function()
 	camera "Visualizer"
 
 	camera3D "RideCamera"
-		Z = 30
+		Y = 100
+		Z = 200
+		XRotation = -20
 
 	layer "Visualizer"
 		sort "NONE"
