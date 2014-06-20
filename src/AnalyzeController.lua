@@ -6,7 +6,7 @@ return component(..., function()
 	depends "glider.Actor"
 
 	msg("onCreate", function(self, ent)
-		local filePath = "assets/sfx/8282.mp3"
+		local filePath = "assets/sfx/IllShowYou.mp3"
 		ent:spawnCoroutine(analyze, self, ent, filePath)
 	end)
 
@@ -38,10 +38,9 @@ return component(..., function()
 			return
 		end
 
-		-- Preprocess data
+		-- Try to obtain information from cache
 		local beats, onsets, energies
 
-		-- Try to obtain information from cache
 		if cachedResult then
 			beats = cachedResult.beats
 			onsets = cachedResult.onsets
@@ -63,15 +62,44 @@ return component(..., function()
 			cacheFile:close()
 		end
 
+		-- Generate level from data
 		local smoothedEnergies = normalize(centeredMovingAvg(doubleExp(energies, 0.5, 0.5), 20))
-		--local cen = doubleExp(smooth1, 0.3, 0.3)
-		--local trackHeights = normalize(integrate(smoothedEnergies))
+
+		local notes = {}
+		local maxDistance = 0.15
+		local beatIndex = 1
+		local numBeats = #beats
+		local numOnsets = #onsets
+
+		for index, onsetTime in ipairs(onsets) do
+			-- If the note is near to a beat, it is a score note
+			-- otherwise, it is a penalty note
+			
+			-- Adjust beatIndex so that it is the closest beat before this note
+			local nextBeat = beats[math.min(beatIndex + 1, numBeats)]
+			while nextBeat < onsetTime do
+				nextBeat = beats[math.min(beatIndex + 1, numBeats)]
+				beatIndex = beatIndex + 1
+			end
+
+			local currentBeat = beats[beatIndex]
+			local distanceNextBeat = math.abs(nextBeat - onsetTime)
+			local distanceToCurrentBeat = math.abs(currentBeat - onsetTime)
+			local distanceToNearestBeat = math.min(distanceNextBeat, distanceToCurrentBeat)
+			print(distanceToNearestBeat, distanceToNearestBeat < maxDistance)
+
+			notes[index] = {
+				time = onsetTime,
+				score = distanceToNearestBeat < maxDistance
+			}
+
+			reportProgress("Finding notes", index, numOnsets)
+		end
 
 		local sceneData = {
 			aubio = aubio,
-			beats = beats,
-			onsets = onsets,
-			energies = smoothedEnergies
+			notes = notes,
+			track = smoothedEnergies
 		}
 		Director.changeScene("scenes.Ride", sceneData)
 	end

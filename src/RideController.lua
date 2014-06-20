@@ -13,36 +13,37 @@ return component(..., function()
 
 	function ride(self, ent, path)
 		local sceneData = Director.getSceneData()
-		-- Create event markers
-		for i, time in ipairs(sceneData.beats) do
-			local marker = Entity.create("presets.Marker")
-			marker:setX(time * TIME_SCALE)
-			marker:setY(-200)
-		end
 
 		local heightScale = 200
 		local aubio = sceneData.aubio
 		local hopSize = aubio:getHopSize()
 		local sampRate, _numFrames = aubio:getAudioInfo()
-		local mesh = generateTrack(sceneData.energies, sampRate, hopSize)
+		local mesh = generateTrack(sceneData.track, sampRate, hopSize)
 
 		local meshInstance = Entity.create("glider.presets.Mesh")
 		meshInstance:getProp():setDeck(mesh)
 		meshInstance:setLayerName("Objects")
 		meshInstance:setYScale(heightScale)
 
-		for i, time in ipairs(sceneData.onsets) do
-			local marker = Entity.create("presets.Marker")
+		for i, note in ipairs(sceneData.notes) do
+			local marker = Entity.create("presets.Note")
+			local time = note.time
+			local score = note.score
+
 			local heightSlot = math.floor(time * sampRate / hopSize + 0.5) + 1
-			--camera:setX(pos * TIME_SCALE + halfWidth)
 			marker:setX((math.random(3) - 2) * 100)
-			marker:setY(sceneData.energies[heightSlot] * heightScale + 20)
+			marker:setY(sceneData.track[heightSlot] * heightScale + 20)
 			marker:setZ(-time * TIME_SCALE)
+			
+			if not score then
+				marker:getProp():setColor(0, 0, 0)
+			end
+
 			marker:getProp():setBillboard(true)
 			marker:setDepthTest(MOAIProp.DEPTH_TEST_LESS)
 		end
 
-		-- Move visualizations with music
+		-- Ride along the track
 		aubio:play()
 		local fmt = "Playing %.1f\nFPS: %.1f\nError: %.3f\nStep: %.3f"
 		local camera = Director.getCamera("Visualizer")
@@ -61,7 +62,7 @@ return component(..., function()
 			txtProgress:setText(fmt:format(position, MOAISim.getPerformance(), math.abs(err), step))
 			local heightSlot = math.floor(pos * sampRate / hopSize + 0.5) + 1
 			camera:setX(pos * TIME_SCALE + halfWidth)
-			ship:setY(sceneData.energies[heightSlot] * heightScale + 20)
+			ship:setY(sceneData.track[heightSlot] * heightScale + 20)
 			ship:setZ(-pos * TIME_SCALE)
 			pos = pos + 0.001 * err
 			step = coroutine.yield()
