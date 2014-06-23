@@ -1,5 +1,10 @@
 -- Protect global environment
 
+-- Load all preloaded modules to prevent conflict
+for i, func in pairs(package.preload) do
+	func()
+end
+
 -- Global variables must be explicitly declared
 function global(name, value)
 	if value == nil then
