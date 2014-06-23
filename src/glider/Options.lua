@@ -130,9 +130,42 @@ return module(function()
 			end
 		end
 
+		local function groupToString(group)
+			-- Find all keys under this group
+			local prefix = getmetatable(group).name .. "."
+			local matchedPaths = {}
+
+			for path in pairs(schema.defaults) do
+				if path:beginswith(prefix) then
+					table.insert(matchedPaths, path)
+				end
+			end
+
+			-- Build a string representation of them
+			table.sort(matchedPaths)
+			local buff = {}
+
+			for i, path in ipairs(matchedPaths) do
+				table.insert(buff, path)
+				table.insert(buff, " = ")
+				table.insert(buff, tostring(options[path]))
+				table.insert(buff, "\n")
+			end
+
+			return table.concat(buff)
+		end
+
 		-- Create all groups
 		for groupName in pairs(schema.groups) do
-			groups[groupName] = setmetatable({}, {name = groupName, __index = groupIndex, __newindex = groupNewIndex})
+			groups[groupName] = setmetatable(
+				{},
+				{
+					name = groupName,
+					__index = groupIndex,
+					__newindex = groupNewIndex,
+					__tostring = groupToString
+				}
+			)
 		end
 
 		local proxyMetatable = {options = options}
@@ -152,6 +185,25 @@ return module(function()
 			else
 				error("Invalid key '"..path.."'", 2)
 			end
+		end
+
+		local sortedKeys = {}
+		for key in pairs(schema.defaults) do
+			table.insert(sortedKeys, key)
+		end
+		table.sort(sortedKeys)
+
+		function proxyMetatable.__tostring()
+			local buff = {}
+
+			for i, key in pairs(sortedKeys) do
+				table.insert(buff, key)
+				table.insert(buff, " = ")
+				table.insert(buff, tostring(options[key]))
+				table.insert(buff, "\n")
+			end
+
+			return table.concat(buff)
 		end
 
 		local proxy = {}
