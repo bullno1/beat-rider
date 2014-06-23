@@ -19,7 +19,7 @@ global("module", function(defFunc)
 	local exports = {}
 
 	for i, symbol in ipairs(exportedSymbols) do
-		exports[symbol] = moduleEnv[symbol]
+		exports[symbol] = rawget(moduleEnv, symbol)
 	end
 
 	return exports
