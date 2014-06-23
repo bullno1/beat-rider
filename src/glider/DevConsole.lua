@@ -5,18 +5,46 @@ return module(function()
 		"init"
 	}
 
+	local infoSocket
 	local cmdSocket
 	local environments = {}
+	local cmdSockAddr
+	local cmdSockPort
 
 	function init()
 		cmdSocket = assert(socket.udp())
-		assert(cmdSocket:setsockname('*', 9001))
+		assert(cmdSocket:setsockname('*', 0))
+		cmdSockAddr, cmdSockPort = cmdSocket:getsockname()
 		assert(cmdSocket:settimeout(0))
+		print("Opened console socket at ", cmdSockAddr, cmdSockPort)
 
-		MOAICoroutine.new():run(update)
+		infoSocket = assert(socket.udp())
+		assert(infoSocket:setoption("reuseaddr", true))
+		assert(infoSocket:setsockname('*', 9008))
+		assert(infoSocket:setoption('broadcast', true))
+		assert(infoSocket:settimeout(0))
+		print("Opened info socket ", cmdSockAddr, 9008)
+		print(MOAIEnvironment.appDisplayName)
+		print(MOAIEnvironment.appID)
+
+		MOAICoroutine.new():run(updateConsole)
+		MOAICoroutine.new():run(advertiseConsole)
 	end
 
-	function update()
+	function advertiseConsole()
+		local yield = coroutine.yield
+
+		while true do
+			local cmd, addr, port = infoSocket:receivefrom()
+
+			if cmd == MOAIEnvironment.appID then
+				infoSocket:sendto(MOAIEnvironment.devName.."@"..cmdSockPort, addr, port)
+			end
+			yield()
+		end
+	end
+
+	function updateConsole()
 		local yield = coroutine.yield
 
 		while true do

@@ -15,6 +15,13 @@ function m.start(config)
 	MOAISim.clearLoopFlags()
 	MOAISim.setLoopFlags(MOAISim.LOOP_FLAGS_FIXED)
 
+	local oldPrint = print
+	local locationFormat = "%s:%s:"
+	global("print", function(...)
+		local info = debug.getinfo(2, "Sl")
+		return oldPrint(locationFormat:format(info.source:sub(2), info.currentline), ...)
+	end)
+
 	config = config or {}
 	App.init()
 	Entity.initManager(config.Entity or {})
@@ -28,13 +35,6 @@ function m.start(config)
 	for lineName, visible in pairs(DebugLines) do
 		MOAIDebugLines.showStyle(MOAIDebugLines[lineName], visible)
 	end
-
-	local oldPrint = print
-	local locationFormat = "%s:%s:"
-	global("print", function(...)
-		local info = debug.getinfo(2, "Sl")
-		return oldPrint(locationFormat:format(info.source:sub(2), info.currentline), ...)
-	end)
 end
 
 return m
