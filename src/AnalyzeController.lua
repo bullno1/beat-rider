@@ -1,6 +1,7 @@
 local Entity = require "glider.Entity"
 local Director = require "glider.Director"
 local MessagePack = require "glider.MessagePack"
+local Options = require "glider.Options"
 
 return component(..., function()
 	depends "glider.Actor"
@@ -11,8 +12,10 @@ return component(..., function()
 	end)
 
 	function analyze(self, ent, path)
+		local analysisOpts = Options.getDevOptions().analysis
+
 		local aubio = Aubio.new()
-		aubio:setHopSize(512)
+		aubio:setHopSize(analysisOpts.hop_size)
 		aubio:addSpectralDescriptor("energy")
 
 		-- Check if analysis result was cached
@@ -53,7 +56,7 @@ return component(..., function()
 				beats = beats,
 				onsets = onsets,
 				energies = energies,
-				hopSize = 512
+				hopSize = analysisOpts.hop_size
 			}
 			local cacheFilePath = getCacheFilePath(path)
 			local cacheFile = io.open(cacheFilePath, "w+b")
@@ -63,10 +66,19 @@ return component(..., function()
 		end
 
 		-- Generate level from data
-		local smoothedEnergies = normalize(centeredMovingAvg(doubleExp(energies, 0.5, 0.5), 20))
+		local smoothedEnergies = normalize(
+			centeredMovingAvg(
+				doubleExp(
+					energies,
+					analysisOpts.track.data_smoothing_factor,
+					analysisOpts.track.trend_smoothing_factor
+				),
+				analysisOpts.track.window_size
+			)
+		)
 
 		local notes = {}
-		local maxDistance = 0.15
+		local maxDistance = analysisOpts.notes.max_distance_to_beat
 		local beatIndex = 1
 		local numBeats = #beats
 		local numOnsets = #onsets
@@ -86,7 +98,6 @@ return component(..., function()
 			local distanceNextBeat = math.abs(nextBeat - onsetTime)
 			local distanceToCurrentBeat = math.abs(currentBeat - onsetTime)
 			local distanceToNearestBeat = math.min(distanceNextBeat, distanceToCurrentBeat)
-			print(distanceToNearestBeat, distanceToNearestBeat < maxDistance)
 
 			notes[index] = {
 				time = onsetTime,
@@ -115,7 +126,7 @@ return component(..., function()
 			local success, cacheContent = pcall(MessagePack.unpack, cacheFile:read("*a"))
 			if success
 				and type(cacheContent) == "table"
-				and cacheContent.hopSize == 512
+				and cacheContent.hopSize == Options.getDevOptions().analysis.hop_size
 				and cacheContent.beats ~= nil
 				and cacheContent.onsets ~= nil
 				and cacheContent.energies ~= nil then
@@ -179,7 +190,7 @@ return component(..., function()
 
 			lastSmooth = smooth
 			lastTrend = trend
-			reportProgress("Smoothing", i, numData, 1000)
+			reportProgress("Smoothing", i, numData)
 		end
 		return result
 	end
@@ -198,7 +209,7 @@ return component(..., function()
 		for i = radius + 2, numData - radius do
 			sum = sum - data[i - radius - 1] + data[i + radius]
 			result[i] = sum / (radius * 2 + 1)
-			reportProgress("Averaging", i, numData, 500)
+			reportProgress("Averaging", i, numData)
 		end
 		for i = numData - radius + 1, numData do
 			result[i] = data[i]
@@ -234,7 +245,7 @@ return component(..., function()
 		for i, num in ipairs(data) do
 			current = current + num
 			result[i] = current
-			reportProgress("Integrating", i, numPoints, 1000)
+			reportProgress("Integrating", i, numPoints)
 		end
 
 		return result

@@ -6,6 +6,7 @@ local Input = require "glider.Input"
 local Network = require "glider.Network"
 local Event = require "glider.Event"
 local Audio = require "glider.Audio"
+local Options = require "glider.Options"
 
 local m = {}
 
@@ -21,6 +22,7 @@ function m.start(config)
 	Input.init(config.Input or {})
 	Network.init(config.Network or {})
 	Audio.init(config.Audio or {})
+	Options.init(config.Options or {})
 
 	local DebugLines = config.DebugLines or {}
 	for lineName, visible in pairs(DebugLines) do

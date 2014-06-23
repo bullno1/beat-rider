@@ -1,35 +1,37 @@
 local Entity = require "glider.Entity"
 local Director = require "glider.Director"
 local Asset = require "glider.Asset"
+local Options = require "glider.Options"
 
 return component(..., function()
 	depends "glider.Actor"
-
-	local TIME_SCALE = 1000
-	local TRACK_WIDTH = 230
 
 	msg("onCreate", function(self, ent)
 		ent:spawnCoroutine(ride, self, ent)
 	end)
 
 	function ride(self, ent, path)
+		local rideOpts = Options.getDevOptions().ride
+		local timeScale = rideOpts.time_scale
+		local trackWidth = rideOpts.track_width
+		local trackHeight = rideOpts.track_height
+
 		local sceneData = Director.getSceneData()
 
-		local heightScale = 200
 		local aubio = sceneData.aubio
 		local hopSize = aubio:getHopSize()
 		local sampRate, _numFrames = aubio:getAudioInfo()
-		local mesh = generateTrack(sceneData.track, sampRate, hopSize)
+		local mesh = generateTrack(sceneData.track, sampRate, hopSize, timeScale, trackWidth)
 
 		local meshInstance = Entity.create("glider.presets.Mesh")
 		meshInstance:getProp():setDeck(mesh)
 		meshInstance:setLayerName("Objects")
-		meshInstance:setYScale(heightScale)
+		meshInstance:setYScale(trackHeight)
 
 		local lastTime = 0
 		local lastX = 0
-		local clusterDistance = 0.5
-		local clusterLimit = 3
+		local clusterDistance = rideOpts.cluster_max_length
+		local clusterLimit = rideOpts.cluster_max_size
 		local currentClusterSize = 0
 		for i, note in ipairs(sceneData.notes) do
 			local marker = Entity.create("presets.Note")
@@ -46,16 +48,16 @@ return component(..., function()
 				currentClusterSize = 0
 			end
 
-			marker:setX(x * TRACK_WIDTH / 3)
+			marker:setX(x * trackWidth / 3)
 			lastX = x
 			lastTime = time
 
 			-- Y is based on track's height at that time
 			local heightSlot = math.floor(time * sampRate / hopSize + 0.5) + 1
-			marker:setY(sceneData.track[heightSlot] * heightScale + 20)
+			marker:setY(sceneData.track[heightSlot] * trackHeight + rideOpts.ship_height)
 
 			-- Z is based on time
-			marker:setZ(-time * TIME_SCALE)
+			marker:setZ(-time * timeScale)
 			
 			if not score then
 				marker:getProp():setColor(0, 0, 0)
@@ -83,15 +85,15 @@ return component(..., function()
 			local err = aubio:getPosition() - pos
 			txtProgress:setText(fmt:format(position, MOAISim.getPerformance(), math.abs(err), step))
 			local heightSlot = math.floor(pos * sampRate / hopSize + 0.5) + 1
-			camera:setX(pos * TIME_SCALE + halfWidth)
-			ship:setY(sceneData.track[heightSlot] * heightScale + 20)
-			ship:setZ(-pos * TIME_SCALE)
+			--camera:setX(pos * TIME_SCALE + halfWidth)
+			ship:setY(sceneData.track[heightSlot] * trackHeight + 20)
+			ship:setZ(-pos * timeScale)
 			pos = pos + 0.001 * err
 			step = coroutine.yield()
 		end
 	end
 
-	function generateTrack(data, sampRate, hopSize)
+	function generateTrack(data, sampRate, hopSize, timeScale, trackWidth)
 		local format = MOAIVertexFormat.new()
 		format:declareCoord(1, MOAIVertexFormat.GL_FLOAT, 3)
 
@@ -100,10 +102,10 @@ return component(..., function()
 
 		vbo:reserveVerts(#data * 2)
 		for index, y in ipairs(data) do
-			local distance = (index  - 1) * hopSize / sampRate * TIME_SCALE
+			local distance = (index - 1) * hopSize / sampRate * timeScale
 
-			vbo:writeFloat(TRACK_WIDTH / 2, y, -distance)
-			vbo:writeFloat(-TRACK_WIDTH / 2, y, -distance)
+			vbo:writeFloat(trackWidth / 2, y, -distance)
+			vbo:writeFloat(-trackWidth / 2, y, -distance)
 		end
 		vbo:bless()
 

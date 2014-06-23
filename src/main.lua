@@ -16,5 +16,9 @@ glider.start{
 		TEXT_BOX               = true,
 		TEXT_BOX_BASELINES     = false,
 		TEXT_BOX_LAYOUT        = false
+	},
+	Options = {
+		user = "UserOptions",
+		developer = "DeveloperOptions"
 	}
 }
