@@ -1,4 +1,5 @@
 local MessagePack = require "glider.MessagePack"
+local App = require "glider.App"
 
 return module(function()
 	exports {
@@ -13,6 +14,10 @@ return module(function()
 		local developerOptionsPath = MOAIEnvironment.documentDirectory .. "/developer.options"
 		local developerOptionsSchema = loadOptionSchema(config.developer)
 		devOptions = loadOptions(developerOptionsSchema, developerOptionsPath)
+
+		App.finalize:addListener(function()
+			saveOptions(devOptions, developerOptionsPath)
+		end)
 	end
 
 	function getDevOptions()
@@ -130,7 +135,7 @@ return module(function()
 			groups[groupName] = setmetatable({}, {name = groupName, __index = groupIndex, __newindex = groupNewIndex})
 		end
 
-		local proxyMetatable = {}
+		local proxyMetatable = {options = options}
 		function proxyMetatable.__index(table, key)
 			if schema.groups[key] ~= nil then--if this is a valid group name
 				return groups[key]
@@ -152,5 +157,13 @@ return module(function()
 		local proxy = {}
 		setmetatable(proxy, proxyMetatable)
 		return proxy
+	end
+
+	function saveOptions(options, path)
+		local options = getmetatable(options).options
+		local fileContent = MessagePack.pack(options)
+		local file = assert(io.open(path, "w+b"))
+		file:write(fileContent)
+		file:close()
 	end
 end)

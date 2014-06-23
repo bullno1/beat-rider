@@ -3,24 +3,22 @@ require "glider.lang"
 local Entity = require "glider.Entity"
 local Director = require "glider.Director"
 local Input = require "glider.Input"
-local Network = require "glider.Network"
 local Event = require "glider.Event"
 local Audio = require "glider.Audio"
 local Options = require "glider.Options"
+local App = require "glider.App"
 
 local m = {}
-
-m.appFinalize = Event.new()
 
 function m.start(config)
 	MOAISim.clearLoopFlags()
 	MOAISim.setLoopFlags(MOAISim.LOOP_FLAGS_FIXED)
 
 	config = config or {}
+	App.init()
 	Entity.initManager(config.Entity or {})
 	Director.init(config.Director or {})
 	Input.init(config.Input or {})
-	Network.init(config.Network or {})
 	Audio.init(config.Audio or {})
 	Options.init(config.Options or {})
 
@@ -28,10 +26,6 @@ function m.start(config)
 	for lineName, visible in pairs(DebugLines) do
 		MOAIDebugLines.showStyle(MOAIDebugLines[lineName], visible)
 	end
-
-	MOAISim.setListener(MOAISim.EVENT_FINALIZE, function(...)
-		m.appFinalize:fire(...)
-	end)
 
 	local oldPrint = print
 	local locationFormat = "%s:%s:"
