@@ -23,7 +23,6 @@ return module(function()
 			local cmd, addr, port = cmdSocket:receivefrom()
 
 			if cmd then
-				print(cmd)
 				if cmd:beginswith('=') then
 					cmd = "return "..cmd:sub(2)
 				end
@@ -64,7 +63,10 @@ return module(function()
 			print = function(...)
 				send(ip, port, ...)
 				send(ip, port, "\n")
-			end
+			end,
+			Entity = require "glider.Entity",
+			Director = require "glider.Director",
+			dev = require("glider.Options").getDevOptions()
 		}
 		setmetatable(env, envMt)
 		environments[clientId] = env
