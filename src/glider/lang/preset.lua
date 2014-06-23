@@ -78,8 +78,13 @@ global("preset", function(name, descriptor)
 
 	function dsl.copyFrom(preset)
 		preset = type(preset) == "string" and require(preset) or preset
+
 		for _, component in ipairs(preset.components) do
 			addComponent(component)
+		end
+
+		for name, value in pairs(preset.defaultProps) do
+			defaultProps[name] = value
 		end
 	end
 
