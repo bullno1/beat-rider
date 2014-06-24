@@ -91,6 +91,7 @@ return module(function()
 
 				local sceneFunc = require(nextScene)
 				sceneFunc(unpack(sceneParams))
+				MOAISim.forceGC()
 				nextScene = nil
 			end
 			yield()
