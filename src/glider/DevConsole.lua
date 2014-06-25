@@ -24,8 +24,6 @@ return module(function()
 		assert(infoSocket:setoption('broadcast', true))
 		assert(infoSocket:settimeout(0))
 		print("Opened info socket ", cmdSockAddr, 9008)
-		print(MOAIEnvironment.appDisplayName)
-		print(MOAIEnvironment.appID)
 
 		MOAICoroutine.new():run(updateConsole)
 		MOAICoroutine.new():run(advertiseConsole)
