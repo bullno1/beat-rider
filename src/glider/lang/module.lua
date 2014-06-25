@@ -1,6 +1,8 @@
 local runtimeMetatable = {__index = _G, __newindex = _G}
 
 global("module", function(defFunc)
+	assertp(type(defFunc) == "function", "Module must be declared with a function")
+
 	local compileEnv = setmetatable({}, {__index = _G})
 
 	local exportedSymbols = {}
