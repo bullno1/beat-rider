@@ -1,1 +1,1 @@
-MOAISim.openWindow("GalaxyS2", 800, 480)
+Titan.openWindow("GalaxyS2", 800, 480, 240)
