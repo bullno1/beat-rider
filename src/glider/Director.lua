@@ -9,7 +9,8 @@ return module(function()
 		"addLayer",
 		"getLayer",
 		"addCamera",
-		"getCamera"
+		"getCamera",
+		"pickFirstEntityAt"
 	}
 
 	local updatePhases = {}
@@ -72,7 +73,47 @@ return module(function()
 		return cameras[name]
 	end
 
+	function pickFirstEntityAt(x, y, predicate)
+		return pickEntityInRenderTable(renderTable, x, y, predicate)
+	end
+
 	-- Private
+	function pickEntityInRenderTable(renderTable, windowX, windowY, predicate)
+		local numEntries = #renderTable
+		for entryIndex = numEntries, 1, -1 do
+			local renderPass = renderTable[entryIndex]
+
+			-- if the render pass is a layer
+			local wndToWorld = renderPass.wndToWorld
+			if wndToWorld then
+				local localX, localY = renderPass:wndToWorld(windowX, windowY)
+				local partition = renderPass:getPartition()
+				if partition then
+					local entity = pickFirstEntity(predicate, partition:propListForPoint(localX, localY))
+					if entity then
+						return entity
+					end
+				end
+			elseif getmetatable(renderPass) == nil then--if renderPass is a table
+				local entity, localX, localY = pickEntityInRenderTable(renderPass, windowX, windowY, predicate)
+				if entity ~= nil then
+					return entity
+				end
+			end
+		end
+	end
+
+	function pickFirstEntity(predicate, prop, ...)
+		if prop then
+			local entity = prop.entity
+			if entity and predicate(entity) then
+				return entity
+			else
+				return pickFirstEntity(predicate, ...)
+			end
+		end
+	end
+
 	local yield = coroutine.yield
 	function changeSceneIfNeeded()
 		while true do
