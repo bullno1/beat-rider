@@ -4,9 +4,15 @@ local Screen = require "glider.Screen"
 
 global("scene", function(name, descriptor)
 	return function(...)
-		local currentViewport = MOAIViewport.new()
-		currentViewport:setSize(Screen.getSize("px"))
-		currentViewport:setScale(Screen.getSize("dp"))
+		local defaultViewport = MOAIViewport.new()
+		defaultViewport:setSize(Screen.getSize("px"))
+		defaultViewport:setScale(Screen.getSize("dp"))
+
+		local guiViewport = MOAIViewport.new()
+		guiViewport:setSize(Screen.getSize("px"))
+		local w, h = Screen.getSize("dp")
+		guiViewport:setScale(w, -h)
+		guiViewport:setOffset(-1, 1)
 
 		local currentLayer
 		local currentEntity
@@ -33,18 +39,23 @@ global("scene", function(name, descriptor)
 			return camera
 		end
 
-		function dsl.layer(name)
-			assertp(currentViewport ~= nil, "No viewport defined")
+		function dsl.layerGUI(name)
 			currentLayer = MOAILayer2D.new()
-			currentLayer:setViewport(currentViewport)
+			currentLayer:setViewport(guiViewport)
+			Director.addLayer(name, currentLayer)
+			return currentLayer
+		end
+
+		function dsl.layer(name)
+			currentLayer = MOAILayer2D.new()
+			currentLayer:setViewport(defaultViewport)
 			Director.addLayer(name, currentLayer)
 			return currentLayer
 		end
 
 		function dsl.layer3D(name)
-			assertp(currentViewport ~= nil, "No viewport defined")
 			currentLayer = MOAILayer.new()
-			currentLayer:setViewport(currentViewport)
+			currentLayer:setViewport(defaultViewport)
 			Director.addLayer(name, currentLayer)
 			MOAIGfxDevice.getFrameBuffer():setClearDepth(true)
 			return currentLayer
@@ -64,15 +75,6 @@ global("scene", function(name, descriptor)
 		function dsl.entity(preset)
 			currentEntity = Entity.create(preset)
 			return currentEntity
-		end
-
-		function dsl.viewport(...)
-			currentViewport = MOAIViewport.new()
-			currentViewport:setSize(...)
-		end
-
-		function dsl.viewScale(x, y)
-			currentViewport:setScale(x, y)
 		end
 
 		setfenv(descriptor, descEnv)
