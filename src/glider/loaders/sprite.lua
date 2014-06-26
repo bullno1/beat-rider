@@ -1,6 +1,13 @@
 local Asset = require "glider.Asset"
 
 return function(name)
+	-- Flip GUI sprite
+	local guiScale = 1
+	if name:endswith("#gui") then
+		name = name:sub(1, -5)
+		guiScale = -1
+	end
+
 	local dataFileName = "./assets/sprites/"..name..".lua"
 	local spriteDef = assert(dofile(dataFileName), "Can't load data file for '"..name.."'")
 
@@ -15,7 +22,7 @@ return function(name)
 	local xOrigin = spriteDef.xOrigin or 0
 	local yOrigin = spriteDef.yOrigin or 0
 	local xScale = spriteDef.xScale or 1
-	local yScale = spriteDef.yScale or 1
+	local yScale = (spriteDef.yScale or 1) * guiScale
 	local frameFormat = assert(spriteDef.frameFormat, "Sprite "..name.." does not provide frame format")
 	assert(type(frameFormat) == "string", "Sprite "..name.. " has invalid frame format")
 
