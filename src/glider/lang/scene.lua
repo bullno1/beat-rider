@@ -1,9 +1,13 @@
 local Entity = require "glider.Entity"
 local Director = require "glider.Director"
+local Screen = require "glider.Screen"
 
 global("scene", function(name, descriptor)
 	return function(...)
-		local currentViewport
+		local currentViewport = MOAIViewport.new()
+		currentViewport:setSize(Screen.getSize("px"))
+		currentViewport:setScale(Screen.getSize("dp"))
+
 		local currentLayer
 		local currentEntity
 

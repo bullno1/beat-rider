@@ -1,7 +1,7 @@
+local Screen = require "glider.Screen"
+
 return scene(..., function()
-	local viewWidth, viewHeight = MOAIGfxDevice.getViewSize()
-	viewport(viewWidth, viewHeight)
-	viewScale(viewWidth, viewHeight)
+	local viewWidth, viewHeight = Screen.getSize "dp"
 
 	layer "GUI"
 		sort "None"

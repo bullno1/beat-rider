@@ -54,6 +54,10 @@ function m.destroy(ent)
 	end
 end
 
+function m.isAlive(ent)
+	return aliveEntities[ent] ~= nil
+end
+
 function m.link(ent, target)
 	local linkedEntities = target.linkedEntities or {}
 	linkedEntities[ent] = true
@@ -64,7 +68,7 @@ function m.getPreset(ent)
 	return getmetatable(ent).preset
 end
 
-function m.initManager()
+function m.init()
 	local yield = coroutine.yield
 	MOAICoroutine.new():run(function()
 		while true do
@@ -100,6 +104,10 @@ end
 
 function m.getByName(name)
 	return nameToEntity[name]
+end
+
+function m.hasComponent(entity, name)
+	return entity[name] ~= nil
 end
 
 function m._setName(entity, name)

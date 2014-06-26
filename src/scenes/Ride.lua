@@ -1,7 +1,7 @@
+local Screen = require "glider.Screen"
+
 return scene(..., function()
-	local viewWidth, viewHeight = MOAIGfxDevice.getViewSize()
-	viewport(viewWidth, viewHeight)
-	viewScale(viewWidth, viewHeight)
+	local viewWidth, viewHeight = Screen.getSize "dp"
 
 	camera "Visualizer"
 
@@ -32,10 +32,15 @@ return scene(..., function()
 		X = -viewWidth / 2
 		Y = viewHeight / 2
 
-	entity "glider.presets.Mesh"
-		Name = "Ship"
+	entity(function()
+		copyFrom "glider.presets.Mesh"
+		components { "Ship" }
+
 		LayerName = "Objects"
+		Name = "Ship"
 		DeckName = "mesh:spaceship.dae"
+		UpdatePhase = "GameLogic"
+	end)
 
 	entity(function()
 		components { "RideController" }
