@@ -1,5 +1,6 @@
 require "glider.lang.strict"
 require "glider.lang.assert"
+require "glider.lang.print"
 require "glider.lang.module"
 require "glider.lang.class"
 require "glider.lang.enum"
