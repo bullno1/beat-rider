@@ -2,9 +2,10 @@
 #define MOAI_AUBIO_TEMPO_DETECTOR_HPP
 
 #include <moai-core/MOAILua.h>
+#include <aubio.h>
+#include <string>
 #include "Substream.hpp"
 #include "ChunkProcessor.hpp"
-#include <aubio.h>
 
 class TempoDetector: public virtual ChunkProcessor<float>
 {

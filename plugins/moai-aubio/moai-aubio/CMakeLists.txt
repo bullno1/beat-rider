@@ -5,6 +5,7 @@ add_library(moai-aubio STATIC
     host.cpp
 	PcmSource.cpp
 	TempoDetector.cpp
+	OnsetDetector.cpp
 	BufferSink.cpp
 	Mp3Decoder.cpp
 	MOAIUntzSoundPlus.cpp
