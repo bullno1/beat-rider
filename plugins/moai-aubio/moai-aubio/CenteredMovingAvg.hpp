@@ -23,9 +23,9 @@ protected:
 	void onData(const float* data, size_t size);
 	void onEnd();
 
+private:
 	static int _setWindowRadius(lua_State* L);
 
-private:
 	float mTotal;
 	std::vector<float> mRingBuff;
 	std::vector<float> mChunkBuff;

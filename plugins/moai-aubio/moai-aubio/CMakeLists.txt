@@ -10,6 +10,7 @@ add_library(moai-aubio STATIC
 	SpecDesc.cpp
 	BufferSink.cpp
 	CenteredMovingAvg.cpp
+	DoubleExp.cpp
 	Mp3Decoder.cpp
 	MOAIUntzSoundPlus.cpp
 )

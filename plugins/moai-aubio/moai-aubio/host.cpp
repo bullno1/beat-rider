@@ -12,6 +12,7 @@
 #include "PhaseVocoder.hpp"
 #include "SpecDesc.hpp"
 #include "CenteredMovingAvg.hpp"
+#include "DoubleExp.hpp"
 
 void MOAIAubioAppInitialize()
 {
@@ -40,6 +41,7 @@ void MOAIAubioContextInitialize()
 	REGISTER_LUA_CLASS(BufferSink);
 
 	REGISTER_LUA_CLASS(CenteredMovingAvg);
+	REGISTER_LUA_CLASS(DoubleExp);
 
 	REGISTER_LUA_CLASS(MOAIUntzSoundPlus);
 }
