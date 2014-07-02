@@ -4,7 +4,7 @@
 #include <moai-core/MOAILua.h>
 #include <aubio.h>
 #include <string>
-#include "ChunkProcessor.hpp"
+#include "Sink.hpp"
 #include "Source.hpp"
 
 class SpecDesc

@@ -9,6 +9,7 @@ add_library(moai-aubio STATIC
 	PhaseVocoder.cpp
 	SpecDesc.cpp
 	BufferSink.cpp
+	CenteredMovingAvg.cpp
 	Mp3Decoder.cpp
 	MOAIUntzSoundPlus.cpp
 )

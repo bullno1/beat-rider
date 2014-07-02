@@ -9,6 +9,9 @@
 #include "MOAIUntzSoundPlus.hpp"
 #include "PcmSource.hpp"
 #include "OnsetDetector.hpp"
+#include "PhaseVocoder.hpp"
+#include "SpecDesc.hpp"
+#include "CenteredMovingAvg.hpp"
 
 void MOAIAubioAppInitialize()
 {
@@ -25,12 +28,20 @@ void MOAIAubioAppInitialize()
 void MOAIAubioContextInitialize()
 {
 	REGISTER_LUA_CLASS(Source<float>);
+	REGISTER_LUA_CLASS(Source<cvec_t>);
 	REGISTER_LUA_CLASS(Sink<float>);
+	REGISTER_LUA_CLASS(Sink<cvec_t>);
+
 	REGISTER_LUA_CLASS(PcmSource);
-	REGISTER_LUA_CLASS(MOAIUntzSoundPlus);
 	REGISTER_LUA_CLASS(OnsetDetector);
 	REGISTER_LUA_CLASS(TempoDetector);
+	REGISTER_LUA_CLASS(PhaseVocoder);
+	REGISTER_LUA_CLASS(SpecDesc);
 	REGISTER_LUA_CLASS(BufferSink);
+
+	REGISTER_LUA_CLASS(CenteredMovingAvg);
+
+	REGISTER_LUA_CLASS(MOAIUntzSoundPlus);
 }
 
 void MOAIAubioAppFinalize()
