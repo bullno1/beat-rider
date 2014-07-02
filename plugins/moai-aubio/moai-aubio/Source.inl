@@ -79,3 +79,11 @@ inline cc8* Source<float>::TypeName() const
 {
 	return "Source<float>";
 }
+
+#include <aubio.h>
+
+template<>
+inline cc8* Source<cvec_t>::TypeName() const
+{
+	return "Source<fft_grain>";
+}

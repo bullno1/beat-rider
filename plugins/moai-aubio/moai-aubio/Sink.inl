@@ -17,3 +17,11 @@ inline cc8* Sink<float>::TypeName() const
 {
 	return "Sink<float>";
 }
+
+#include <aubio.h>
+
+template<>
+inline cc8* Sink<cvec_t>::TypeName() const
+{
+	return "Sink<fft_grain>";
+}
