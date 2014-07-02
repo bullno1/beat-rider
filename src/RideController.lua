@@ -10,7 +10,7 @@ return component(..., function()
 		ent:spawnCoroutine(ride, self, ent)
 	end)
 
-	function ride(self, ent, path)
+	function ride(self, ent)
 		local rideOpts = Options.getDevOptions().ride
 		local timeScale = rideOpts.time_scale
 		local trackWidth = rideOpts.track_width
@@ -18,39 +18,22 @@ return component(..., function()
 
 		local sceneData = Director.getSceneData()
 
-		local aubio = sceneData.aubio
-		local hopSize = aubio:getHopSize()
-		local sampRate, _numFrames = aubio:getAudioInfo()
+		local song = MOAIUntzSoundPlus.new()
+		assert(song:load(sceneData.path), "Failed to load song")
+		local sampRate = song:getSampleRate()
+		local hopSize = Options.getDevOptions().analysis.hop_size
 		local mesh = generateTrack(sceneData.track, sampRate, hopSize, timeScale, trackWidth)
 
-		local meshInstance = Entity.create("glider.presets.Mesh")
-		meshInstance:getProp():setDeck(mesh)
-		meshInstance:setLayerName("Objects")
-		meshInstance:setYScale(trackHeight)
+		local track = Entity.create("glider.presets.Mesh")
+		track:getProp():setDeck(mesh)
+		track:setLayerName("Objects")
+		track:setYScale(trackHeight)
 
-		local lastTime = 0
-		local lastX = 0
-		local clusterDistance = rideOpts.cluster_max_length
-		local clusterLimit = rideOpts.cluster_max_size
-		local currentClusterSize = 0
 		for i, note in ipairs(sceneData.notes) do
 			local marker = Entity.create("presets.Note")
-			local time = note.time
-			local score = note.score
+			local time, column, score = unpack(note)
 
-			-- X is random with clustering
-			local x
-			if time - lastTime < clusterDistance and currentClusterSize < clusterLimit - 1 then
-				x = lastX
-				currentClusterSize = currentClusterSize + 1
-			else
-				x = math.random(3) - 2 --3 lanes
-				currentClusterSize = 0
-			end
-
-			marker:setX(x * trackWidth / 3)
-			lastX = x
-			lastTime = time
+			marker:setX((column - 2) * trackWidth / 3)
 
 			-- Y is based on track's height at that time
 			local heightSlot = math.floor(time * sampRate / hopSize + 0.5) + 1
@@ -68,10 +51,11 @@ return component(..., function()
 		end
 
 		-- Ride along the track
-		aubio:play()
+		song:play()
+
 		local fmt = "Playing %.1f\nFPS: %.1f\nError: %.3f\nStep: %.3f"
 		local camera = Director.getCamera("Visualizer")
-		local pos = aubio:getPosition()
+		local pos = song:getPosition()
 		local ship = Entity.getByName("Ship")
 		local step = 0
 		local halfWidth = MOAIGfxDevice.getViewSize() / 2
@@ -80,12 +64,11 @@ return component(..., function()
 		local ship = Entity.getByName("Ship")
 		rideCamera:getCamera():setAttrLink(MOAITransform.INHERIT_LOC, ship:getProp(), MOAITransform.TRANSFORM_TRAIT)
 		while true do
-			local position = aubio:getPosition()
+			local position = song:getPosition()
 			pos = pos + step
-			local err = aubio:getPosition() - pos
+			local err = song:getPosition() - pos
 			txtProgress:setText(fmt:format(position, MOAISim.getPerformance(), math.abs(err), step))
 			local heightSlot = math.floor(pos * sampRate / hopSize + 0.5) + 1
-			--camera:setX(pos * TIME_SCALE + halfWidth)
 			ship:setY(sceneData.track[heightSlot] * trackHeight + 20)
 			ship:setZ(-pos * timeScale)
 			pos = pos + 0.001 * err

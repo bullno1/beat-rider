@@ -36,6 +36,7 @@ void MOAIUntzSoundPlus::RegisterLuaFuncs(MOAILuaState& state)
 		{ "pause", _pause },
 		{ "getLength", _getLength },
 		{ "getPosition", _getPosition },
+		{ "getSampleRate", _getSampleRate },
 		{ NULL, NULL }
 	};
 
@@ -129,6 +130,22 @@ int MOAIUntzSoundPlus::_getPosition(lua_State* L)
 	if(self->mSound)
 	{
 		state.Push(self->mSound->getPosition());
+	}
+	else
+	{
+		state.Push();
+	}
+
+	return 1;
+}
+
+int MOAIUntzSoundPlus::_getSampleRate(lua_State* L)
+{
+	MOAI_LUA_SETUP(MOAIUntzSoundPlus, "U");
+
+	if(self->mAudioStream)
+	{
+		state.Push(self->mAudioStream->getSampleRate());
 	}
 	else
 	{

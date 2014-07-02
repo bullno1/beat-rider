@@ -25,7 +25,7 @@ return scene(..., function()
 		Name = "txtProgress"
 		LayerName = "GUI"
 		FontName = "hermit.ttf"
-		FontSize = 20
+		FontSize = 21
 		TextRect = { 0, 0, 200, -200 }
 		TextAlignment = { "top", "left" }
 		Text = "Yo"

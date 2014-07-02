@@ -22,6 +22,7 @@ private:
 	static int _pause(lua_State* L);
 	static int _getLength(lua_State* L);
 	static int _getPosition(lua_State* L);
+	static int _getSampleRate(lua_State* L);
 
 	UNTZ::Sound* mSound;
 	AudioStream* mAudioStream;

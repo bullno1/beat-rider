@@ -29,7 +29,7 @@ void BufferSink::onBegin()
 
 void BufferSink::onData(const float* data, size_t size)
 {
-	mBuffer.insert(mBuffer.begin(), data, data + size);
+	mBuffer.insert(mBuffer.end(), data, data + size);
 }
 
 void BufferSink::onEnd()
