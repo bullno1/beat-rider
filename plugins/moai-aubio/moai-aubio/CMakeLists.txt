@@ -12,7 +12,7 @@ add_library(moai-aubio STATIC
 	CenteredMovingAvg.cpp
 	DoubleExp.cpp
 	Mp3Decoder.cpp
-	MOAIUntzSoundPlus.cpp
+	UntzSoundEx.cpp
 )
 target_include_directories(moai-aubio PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../)
 target_link_libraries(moai-aubio aubio mpg123 moai-core moai-util moai-sim zlcore untz)

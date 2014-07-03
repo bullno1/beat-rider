@@ -22,7 +22,7 @@ protected:
 private:
 	static int _open(lua_State* L);
 	static int _getProgress(lua_State* L);
-	static int _getSampleRate(lua_State* L);
+	static int _getInfo(lua_State* L);
 
 	AudioStream* mStream;
 	bool mEos;

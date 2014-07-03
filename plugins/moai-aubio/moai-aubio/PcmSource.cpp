@@ -27,7 +27,7 @@ void PcmSource::RegisterLuaFuncs(MOAILuaState& state)
 	luaL_reg regTable[] = {
 		{ "open", _open },
 		{ "getProgress", _getProgress },
-		{ "getSampleRate", _getSampleRate },
+		{ "getInfo", _getInfo },
 		{ NULL, NULL }
 	};
 
@@ -116,14 +116,16 @@ int PcmSource::_getProgress(lua_State* L)
 	}
 }
 
-int PcmSource::_getSampleRate(lua_State* L)
+int PcmSource::_getInfo(lua_State* L)
 {
 	MOAI_LUA_SETUP(PcmSource, "U");
 
 	if(self->mStream)
 	{
 		state.Push(self->mStream->getSampleRate());
-		return 1;
+		state.Push(self->mStream->getNumChannels());
+		state.Push(self->mStream->getLength());
+		return 3;
 	}
 	else
 	{

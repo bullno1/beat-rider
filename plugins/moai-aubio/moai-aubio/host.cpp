@@ -6,7 +6,7 @@
 #include <string>
 #include "TempoDetector.hpp"
 #include "BufferSink.hpp"
-#include "MOAIUntzSoundPlus.hpp"
+#include "UntzSoundEx.hpp"
 #include "PcmSource.hpp"
 #include "OnsetDetector.hpp"
 #include "PhaseVocoder.hpp"
@@ -43,7 +43,7 @@ void MOAIAubioContextInitialize()
 	REGISTER_LUA_CLASS(CenteredMovingAvg);
 	REGISTER_LUA_CLASS(DoubleExp);
 
-	REGISTER_LUA_CLASS(MOAIUntzSoundPlus);
+	REGISTER_LUA_CLASS(UntzSoundEx);
 }
 
 void MOAIAubioAppFinalize()
