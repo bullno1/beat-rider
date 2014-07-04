@@ -18,9 +18,18 @@ return component(..., function()
 
 		local sceneData = Director.getSceneData()
 
-		local song = MOAIUntzSoundPlus.new()
-		assert(song:load(sceneData.path), "Failed to load song")
-		local sampRate = song:getSampleRate()
+		local txtProgress = Entity.getByName("txtProgress")
+		local song = UntzSoundEx.new()
+		assert(song:open(sceneData.path), "Failed to load song")
+		repeat
+			local status, progress = song:loadChunk(65536)
+			if status == UntzSoundEx.STATUS_MORE then
+				txtProgress:setText(tostring(math.floor(progress * 100)))
+			end
+			coroutine.yield()
+		until status ~= UntzSoundEx.STATUS_MORE
+		local sampRate = song:getInfo()
+
 		local hopSize = Options.getDevOptions().analysis.hop_size
 		local mesh = generateTrack(sceneData.track, sampRate, hopSize, timeScale, trackWidth)
 

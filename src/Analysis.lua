@@ -138,7 +138,7 @@ return module(function()
 		local source = PcmSource.new()
 		source:setChunkSize(65536)
 		if not source:open(path) then return end
-		local sampRate = source:getSampleRate()
+		local sampRate = source:getInfo()
 		local hopSize = opts.hop_size
 
 		local tempoDetector = TempoDetector.new()
