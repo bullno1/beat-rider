@@ -8,10 +8,20 @@ MOAIEnvironment.setValue("appID", os.getenv("APP_ID"))
 MOAIEnvironment.setValue("devName", "simulator")
 
 local function restartOnModification(action, file)
+	print(action, file)
 	if action == "modified" then
 		Titan.restart()
 	end
 end
 
-Titan.addWatch("src", restartOnModification)
-Titan.addWatch("assets", restartOnModification)
+local function watchRecursively(folder, action)
+	Titan.addWatch(folder, action)
+
+	local subDirs = MOAIFileSystem.listDirectories(folder)
+	for i, subDir in ipairs(subDirs) do
+		watchRecursively(folder.."/"..subDir, action)
+	end
+end
+
+watchRecursively("src", restartOnModification)
+watchRecursively("assets", restartOnModification)
