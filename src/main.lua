@@ -6,7 +6,7 @@ glider.start{
 			"GameLogic",
 			"Visual"
 		},
-		firstScene = "scenes.Analyze"
+		firstScene = "analyze"
 	},
 	DebugLines = {
 		PARTITION_CELLS        = false,
@@ -22,5 +22,3 @@ glider.start{
 		developer = "DeveloperOptions"
 	}
 }
-
-require "Analysis"

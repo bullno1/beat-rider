@@ -1,3 +1,5 @@
+local Asset = require "glider.Asset"
+
 local m = {}
 
 local aliveEntities = {}
@@ -8,29 +10,19 @@ local nameToEntity = {}
 local entityToName = {}
 
 -- Create an entity from preset
-function m.create(presetDesc)
-	local presetDescType = type(presetDesc)
-	local entityPreset
-	if presetDescType == "string" then
-		entityPreset = require(presetDesc)
-	elseif presetDescType == "function" then
-		anonPresetCount = anonPresetCount + 1
-		entityPreset = preset("anonymousPreset#"..anonPresetCount, presetDesc)
-	elseif presetDescType == "table" then
-		entityPreset = presetDesc
-	else
-		error("Unknown preset description type '"..presetDescType.."'")
+function m.create(preset)
+	preset = type(preset) == "string" and Asset.get("preset", preset) or preset
+	-- Create a table for every component to store its state
+	local entity = {}
+	for _, component in ipairs(preset.components) do
+		entity[component.name] = {}
 	end
-
-	local components = {}
-	for _, component in ipairs(entityPreset.components) do
-		components[component.name] = {}
-	end
-	local entity = setmetatable(components,	entityPreset.metatable)
+	setmetatable(entity, preset.metatable)
 	aliveEntities[entity] = true
 	m.send(entity, "onCreate")
 
-	for name, value in pairs(entityPreset.defaultProps) do
+	for propertyIndex, propertyKV in pairs(preset.defaultProperties) do
+		local name, value = unpack(propertyKV)
 		entity["set"..name](entity, value)
 	end
 

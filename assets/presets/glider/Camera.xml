@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<preset>
+	<components>
+		<component name="glider.Camera" />
+	</components>
+</preset>

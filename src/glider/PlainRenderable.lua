@@ -8,7 +8,7 @@ return component(..., function()
 			return self.deckName
 		end,
 		function(self, ent, val)
-			ent:getProp():setDeck(Asset.get(val))
+			ent:getProp():setDeck(Asset.get(unpack(val:split(":"))))
 			self.deckName = val
 		end
 	)

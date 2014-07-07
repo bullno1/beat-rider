@@ -4,7 +4,7 @@ return function(name)
 	local dataFileName = "./assets/atlases/"..name..".lua"
 	local atlasData = assert(dofile(dataFileName), "Can't load data file for "..name)
 
-	local texture = Asset.get("texture:gen/"..atlasData.texture)
+	local texture = Asset.get("texture", "gen/"..atlasData.texture)
 
 	local frames = {}
 	for _, frame in ipairs(atlasData.frames) do

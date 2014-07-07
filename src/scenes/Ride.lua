@@ -1,18 +1,8 @@
-local Screen = require "glider.Screen"
-
 return scene(..., function()
-	local viewWidth, viewHeight = Screen.getSize "dp"
-
-	camera "Visualizer"
-
 	camera3D "RideCamera"
 		Y = 50
 		Z = 120
 		XRotation = -10
-
-	layer "Visualizer"
-		sort "NONE"
-		useCamera "Visualizer"
 
 	layer "GUI"
 		sort "NONE"

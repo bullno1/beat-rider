@@ -33,13 +33,13 @@ return component(..., function()
 		local hopSize = Options.getDevOptions().analysis.hop_size
 		local mesh = generateTrack(sceneData.track, sampRate, hopSize, timeScale, trackWidth)
 
-		local track = Entity.create("glider.presets.Mesh")
+		local track = Entity.create("glider/Mesh")
 		track:getProp():setDeck(mesh)
-		track:setLayerName("Objects")
+		track:setPartitionName("Objects")
 		track:setYScale(trackHeight)
 
 		for i, note in ipairs(sceneData.notes) do
-			local marker = Entity.create("presets.Note")
+			local marker = Entity.create("Note")
 			local time, column, score = unpack(note)
 
 			marker:setX((column - 2) * trackWidth / 3)
@@ -56,20 +56,18 @@ return component(..., function()
 			end
 
 			marker:getProp():setBillboard(true)
-			marker:setDepthTest(MOAIProp.DEPTH_TEST_LESS)
 		end
 
 		-- Ride along the track
 		song:play()
 
 		local fmt = "Playing %.1f\nFPS: %.1f\nError: %.3f\nStep: %.3f"
-		local camera = Director.getCamera("Visualizer")
 		local pos = song:getPosition()
 		local ship = Entity.getByName("Ship")
 		local step = 0
 		local halfWidth = MOAIGfxDevice.getViewSize() / 2
 		local txtProgress = Entity.getByName("txtProgress")
-		local rideCamera = Director.getCamera("RideCamera")
+		local rideCamera = Entity.getByName("RideCamera")
 		local ship = Entity.getByName("Ship")
 		rideCamera:getCamera():setAttrLink(MOAITransform.INHERIT_LOC, ship:getProp(), MOAITransform.TRANSFORM_TRAIT)
 		while true do
@@ -104,11 +102,11 @@ return component(..., function()
 		local track = MOAIMesh.new()
 		track:setVertexBuffer(vbo)
 		track:setPrimType(MOAIMesh.GL_TRIANGLE_STRIP)
-		local trackTexture = Asset.get("texture:track.png")
+		local trackTexture = Asset.get("texture", "track.png")
 		trackTexture:setWrap(true)
 		track:setTexture(trackTexture)
 		local textureHeight = select(2, trackTexture:getSize())
-		local trackShader = Asset.get("shader:track")
+		local trackShader = Asset.get("shader", "track")
 		trackShader:setAttr(2, 1 / textureHeight / 4)
 		track:setShader(trackShader)
 

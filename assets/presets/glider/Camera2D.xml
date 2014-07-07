@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<preset>
+	<components>
+		<component name="glider.Camera" />
+	</components>
+	<properties>
+		<number name="NearPlane">1</number>
+		<number name="FarPlane">1</number>
+		<boolean name="Ortho">true</boolean>
+	</properties>
+</preset>

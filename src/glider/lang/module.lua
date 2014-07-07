@@ -1,5 +1,14 @@
 local runtimeMetatable = {__index = _G, __newindex = _G}
 
+local moduleMetatable = {
+	__index = function(table, key)
+		error("Trying to access unexported symbol '"..tostring(key).."'", 2)
+	end,
+	__newindex = function(table, key)
+		error("Trying to add symbol '"..tostring(key).."'", 2)
+	end
+}
+
 global("module", function(defFunc)
 	assertp(type(defFunc) == "function", "Module must be declared with a function")
 
@@ -24,5 +33,5 @@ global("module", function(defFunc)
 		exports[symbol] = rawget(moduleEnv, symbol)
 	end
 
-	return exports
+	return setmetatable(exports, moduleMetatable)
 end)

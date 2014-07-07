@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<preset>
+	<components>
+		<component name="glider.PlainRenderable" />
+	</components>
+	<properties>
+		<string name="DepthTest">less</string>
+	</properties>
+</preset>

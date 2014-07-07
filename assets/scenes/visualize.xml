@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<scene>
+	<partitions>
+		<partition name="GUI" />
+		<partition name="Visualization" />
+	</partitions>
+
+	<entities>
+		<preset name="glider/Camera">
+			<string name="Name">GraphCam</string>
+		</preset>
+
+		<entity>
+			<components>
+				<component name="VisualizeControl" />
+			</components>
+		</entity>
+
+		<preset name="glider/Text">
+			<string name="Name">txtProgress</string>
+			<string name="PartitionName">GUI</string>
+			<string name="FontName">hermit.ttf</string>
+			<number name="FontSize">20</number>
+			<list name="TextRect">0, 0, 200, 200</list>
+			<list name="TextAlignment">left, top</list>
+			<string name="Text"> yolo </string>
+		</preset>
+	</entities>
+
+	<viewports>
+		<viewport name="Default" />
+		<viewport name="GUI" y-scale="-1" x-offset="-1" y-offset="1" />
+	</viewports>
+
+	<render-tables>
+		<render-table name="main">
+			<layer partition="Visualization" viewport="Default" camera="GraphCam" />
+			<layer partition="GUI" viewport="GUI" />
+		</render-table>
+	</render-tables>
+
+	<frame-buffers>
+	</frame-buffers>
+</scene>

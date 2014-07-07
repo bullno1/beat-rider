@@ -14,7 +14,7 @@ return component(..., function()
 		local result = Analysis.analyze(path, reportProgress)
 		if result then
 			result.path = path
-			Director.changeScene("scenes.Ride", result)
+			Director.changeScene("ride", result)
 		else
 			Entity.getByName("txtProgress"):setText("Failed")
 		end

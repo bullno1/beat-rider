@@ -10,22 +10,23 @@ return component(..., function()
 		end
 	)
 
-	property("LayerName",
+	property("PartitionName",
 		function(self, ent)
 			return self.layerName
 		end,
 		function(self, ent, val)
 			local prop = ent:getTransform()
 
-			local oldLayer = self.layerName
-			if oldLayer then
-				Director.getLayer(oldLayer):removeProp(prop)
+			local oldPartition = self.partitionName
+			if oldPartition then
+				Director.getPartition(oldPartition):removeProp(prop)
 			end
 
-			self.layerName = val
+			self.partitionName = val
 
 			if val then
-				Director.getLayer(val):insertProp(prop)
+				local partition = assert(Director.getPartition(val), "Invalid partition '"..val.."'")
+				partition:insertProp(prop)
 			end
 		end
 	)
@@ -35,11 +36,12 @@ return component(..., function()
 			return self.depthTest
 		end,
 		function(self, ent, val)
-			ent:getProp():setDepthTest(val)
+			self.depthTest = val
+			ent:getProp():setDepthTest(MOAIProp["DEPTH_TEST_"..val:upper()])
 		end
 	)
 
 	msg("onDestroy", function(self, ent)
-		ent:setLayerName(nil)
+		ent:setPartitionName(nil)
 	end)
 end)

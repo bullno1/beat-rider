@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<preset>
+	<components>
+		<preset name="glider/Sprite" />
+	</components>
+	<properties>
+		<string name="SpriteName">gem</string>
+		<string name="PartitionName">Objects</string>
+		<string name="DepthTest">less</string>
+	</properties>
+</preset>

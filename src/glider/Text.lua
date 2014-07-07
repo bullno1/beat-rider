@@ -3,13 +3,23 @@ local Asset = require "glider.Asset"
 return component(..., function(i)
 	depends "glider.Renderable"
 
+	property("YFlip",
+		function(self, ent)
+			return self.yFlip
+		end,
+		function(self, ent, val)
+			self.yFlip = val
+			ent:getTransform():setYFlip(val)
+		end
+	)
+
 	property("FontName",
 		function(self, ent)
 			return self.fontName
 		end,
 		function(self, ent, val)
 			self.fontName = val
-			self.style:setFont(Asset.get("font:"..val))
+			self.style:setFont(Asset.get("font", val))
 		end
 	)
 
@@ -24,12 +34,10 @@ return component(..., function(i)
 
 	property("TextRect",
 		function(self, ent)
-			local xmin, ymax, xmax, ymin = ent:getTransform():getRect()
-			return {xmin, ymin, xmax, ymax}
+			return ent:getTransform():getRect()
 		end,
 		function(self, ent, val)
-			local xmin, ymax, xmax, ymin = unpack(val)
-			ent:getTransform():setRect(xmin, ymin, xmax, ymax)
+			ent:getTransform():setRect(unpack(val))
 		end
 	)
 	
@@ -68,9 +76,9 @@ return component(..., function(i)
 		local prop = ent:_requestTransformType("MOAITextBox")
 		local style = MOAITextStyle.new()
 		prop:setStyle(style)
-		prop:setYFlip(true)
 
 		self.style = style
+		self.yFlip = false
 		prop.entity = ent
 	end)
 end)

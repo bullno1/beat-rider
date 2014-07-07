@@ -60,7 +60,7 @@ return function(name)
 	mesh:setVertexBuffer(vbo)
 	mesh:setPrimType(MOAIMesh.GL_TRIANGLES)
 	if importSettings.texture then
-		mesh:setTexture(Asset.get("texture:"..importSettings.texture))
+		mesh:setTexture(Asset.get("texture", importSettings.texture))
 	end
 	return mesh
 end

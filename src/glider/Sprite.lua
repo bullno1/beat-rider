@@ -11,7 +11,7 @@ return component(..., function()
 		function(self, ent, val)
 			self.spriteName = val
 
-			local sprite = Asset.get("sprite:"..val)
+			local sprite = Asset.get("sprite", val)
 			local prop = ent:getProp()
 			local anim = self.anim
 

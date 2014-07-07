@@ -8,8 +8,17 @@ global("component", function(name, descriptor)
 
 	local descEnv = setmetatable({}, {__index = _G})
 
-	function descEnv.depends(name)
-		table.insert(deps, name)
+	function descEnv.depends(depName)
+		local success, componentOrError = pcall(require, depName)
+		assertp(
+			success,
+			"Component "..name.." specifies an unloadable dependency: "..depName.."\n"..tostring(componentOrError)
+		)
+		assertp(
+			type(componentOrError) == "table" and rawget(componentOrError, "type") == "component",
+			"Component "..name.." specifies an invalid dependency: "..depName
+		)
+		table.insert(deps, componentOrError)
 	end
 
 	function descEnv.property(name, getter, setter)
@@ -48,6 +57,7 @@ global("component", function(name, descriptor)
 
 	return {
 		name = name,
+		type = "component",
 		messageHandlers = msgs,
 		queryHandlers = queries,
 		dependencies = deps,

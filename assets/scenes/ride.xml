@@ -1,0 +1,63 @@
+<?xml version="1.0"?>
+<scene>
+	<partitions>
+		<partition name="GUI" />
+		<partition name="Objects" />
+	</partitions>
+
+	<entities>
+		<preset name="glider/Camera">
+			<string name="Name">RideCamera</string>
+			<number name="Y">50</number>
+			<number name="Z">120</number>
+			<number name="XRotation">-12</number>
+		</preset>
+
+		<entity>
+			<components>
+				<preset name="glider/Mesh" />
+				<component name="Ship" />
+			</components>
+			<properties>
+				<string name="Name">Ship</string>
+				<string name="PartitionName">Objects</string>
+				<string name="DeckName">mesh:spaceship.dae</string>
+				<string name="UpdatePhase">GameLogic</string>
+			</properties>
+		</entity>
+
+		<preset name="glider/Text">
+			<string name="Name">txtProgress</string>
+			<string name="PartitionName">GUI</string>
+			<string name="FontName">hermit.ttf</string>
+			<number name="FontSize">20</number>
+			<list name="TextRect">0, 0, 200, 200</list>
+			<list name="TextAlignment">left, top</list>
+			<string name="Text"> yolo </string>
+		</preset>
+
+		<entity>
+			<components>
+				<component name="RideController" />
+			</components>
+			<properties>
+				<string name="UpdatePhase">GameLogic</string>
+			</properties>
+		</entity>
+	</entities>
+
+	<viewports>
+		<viewport name="Default" />
+		<viewport name="GUI" y-scale="-1" x-offset="-1" y-offset="1" />
+	</viewports>
+
+	<render-tables>
+		<render-table name="main">
+			<layer partition="Objects" viewport="Default" camera="RideCamera" />
+			<layer partition="GUI" viewport="GUI" />
+		</render-table>
+	</render-tables>
+
+	<frame-buffers>
+	</frame-buffers>
+</scene>

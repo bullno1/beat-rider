@@ -11,7 +11,7 @@ return function(name)
 	local dataFileName = "./assets/sprites/"..name..".lua"
 	local spriteDef = assert(dofile(dataFileName), "Can't load data file for '"..name.."'")
 
-	local atlas = Asset.get("atlas:"..spriteDef.atlas)
+	local atlas = Asset.get("atlas", spriteDef.atlas)
 
 	local deck = MOAIGfxQuadDeck2D.new()
 	deck:setTexture(atlas.texture)
