@@ -6,7 +6,7 @@
 	</partitions>
 
 	<entities>
-		<preset name="glider/Camera">
+		<preset name="glider/Camera2D">
 			<string name="Name">GraphCam</string>
 		</preset>
 
@@ -14,6 +14,9 @@
 			<components>
 				<component name="VisualizeControl" />
 			</components>
+			<properties>
+				<string name="UpdatePhase">GameLogic</string>
+			</properties>
 		</entity>
 
 		<preset name="glider/Text">
@@ -28,7 +31,7 @@
 	</entities>
 
 	<viewports>
-		<viewport name="Default" />
+		<viewport name="Default" x-offset="-1" y-offset="-1" />
 		<viewport name="GUI" y-scale="-1" x-offset="-1" y-offset="1" />
 	</viewports>
 
