@@ -50,7 +50,8 @@ return component(..., function()
 
 		local colors = {
 			bpm = { 1, 0, 0},
-			energy = { 0, 1, 0}
+			energy = { 0, 1, 0 },
+			slope = { 0, 0, 1 }
 		}
 
 		for graphName, color in pairs(colors) do
@@ -203,18 +204,27 @@ return component(..., function()
 		local rawEnergyBuff = BufferSink.new()
 		energyFunc:connect(rawEnergyBuff)
 
-		-- Speed
-		local diff = Difference.new()
-		centeredMovingAvg:connect(diff)
+		-- Slope
+		local specflux = SpecDesc.new()
+		specflux:setFunction("specflux")
+		phaseVocoder:connect(specflux)
 
-		local speedBuff = BufferSink.new()
-		diff:connect(speedBuff)
+		local doubleExp = DoubleExp.new()
+		doubleExp:setSmoothingFactors(0.01, 0.1)
+		specflux:connect(doubleExp)
+
+		local centeredMovingAvg = CenteredMovingAvg.new()
+		centeredMovingAvg:setWindowRadius(10)
+		doubleExp:connect(centeredMovingAvg)
+
+		local slopeBuff = BufferSink.new()
+		centeredMovingAvg:connect(slopeBuff)
 
 		local buffers = {
 			bpm = bpmBuff,
 			energy = energyBuff,
-			speed = speedBuff,
 			onset = onsetBuff,
+			slope = slopeBuff,
 			rawEnergy = rawEnergyBuff
 		}
 
