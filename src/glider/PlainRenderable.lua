@@ -15,7 +15,7 @@ return component(..., function()
 
 	msg("onCreate", function(self, ent)
 		local prop = ent:_requestTransformType("MOAIProp")
-		prop:setBlendMode(MOAIProp.BLEND_ADD)
+		prop:setBlendMode(MOAIProp.GL_SRC_ALPHA, MOAIProp.GL_ONE_MINUS_SRC_ALPHA)
 		prop.entity = ent
 	end)
 end)
