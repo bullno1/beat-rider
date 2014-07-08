@@ -64,6 +64,7 @@ return component(..., function()
 		local colors = {
 			onset = { 1, 1, 0, 0.5 }
 		}
+		local bpm = buffers.bpm:getAsTable()
 
 		local rawEnergy = buffers.rawEnergy:getAsTable(true)
 		for markerName, color in pairs(colors) do
@@ -74,15 +75,16 @@ return component(..., function()
 
 		song:play()
 
-		local fmt = "Playing %.1f\nFPS: %.1f\nError: %.3f\nStep: %.3f"
+		local fmt = "Playing %.1f\nFPS: %.1f\nError: %.3f\nBpm: %.3f"
 		local pos = song:getPosition()
 		local step = 0
 		local graphCam = Entity.getByName("GraphCam")
 		while true do
 			local position = song:getPosition()
+			local bpm = bpm[math.floor(position * sampRate / hopSize) + 1]
 			pos = pos + step
-			local err = song:getPosition() - pos
-			txtProgress:setText(fmt:format(position, MOAISim.getPerformance(), math.abs(err), step))
+			local err = position - pos
+			txtProgress:setText(fmt:format(position, MOAISim.getPerformance(), math.abs(err), bpm))
 			graphCam:setX(pos * timeScale)
 			pos = pos + 0.001 * err
 			step = coroutine.yield()
