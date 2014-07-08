@@ -46,6 +46,7 @@ return component(..., function()
 			local height = yMax - yMin
 			local yScale = screenHeight / height
 			graph:setYScale(yScale)
+			return graph
 		end
 
 		local colors = {
@@ -61,6 +62,29 @@ return component(..., function()
 			local graphMesh = generateGraph(graphData, sampRate, hopSize, timeScale, color)
 			showGraph(graphMesh)
 		end
+
+		local energyData = buffers.energy:getAsTable(true)
+		local energyBaseData = buffers.energyBase:getAsTable(true)
+		for i, y in ipairs(energyData) do
+			local adjPointOffset = i == 1 and 1 or -1
+			local baseElevation = math.atan(energyBaseData[i + adjPointOffset] - energyBaseData[i], adjPointOffset)
+			local elevation = (energyData[i] - energyBaseData[i]) * math.cos(baseElevation)
+			energyData[i] = energyData[i] - energyBaseData[i]
+		end
+
+		--local min, max = energyData[1], energyData[1]
+		--for i, y in ipairs(energyData) do
+			--min = math.min(min, y)
+			--max = math.max(max, y)
+		--end
+
+		--for i, y in ipairs(energyData) do
+			--energyData[i] = (y - min) / (max - min)
+		--end
+
+		local wave = showGraph(generateGraph(energyData, sampRate, hopSize, timeScale, {1, 1, 1, 1}))
+		wave:setYScale(300)
+		wave:setY(screenHeight / 2)
 
 		local colors = {
 			onset = { 1, 1, 0, 0.5 }
@@ -198,19 +222,15 @@ return component(..., function()
 		energyFunc:connect(doubleExp)
 
 		local centeredMovingAvg = CenteredMovingAvg.new()
-		centeredMovingAvg:setWindowRadius(10)
+		centeredMovingAvg:setWindowRadius(15)
 		doubleExp:connect(centeredMovingAvg)
 
 		local energyBuff = BufferSink.new()
 		centeredMovingAvg:connect(energyBuff)
 
 		-- Energy base
-		local doubleExp = DoubleExp.new()
-		doubleExp:setSmoothingFactors(0.03, 0.03)
-		energyFunc:connect(doubleExp)
-
 		local centeredMovingAvg = CenteredMovingAvg.new()
-		centeredMovingAvg:setWindowRadius(20)
+		centeredMovingAvg:setWindowRadius(30)
 		doubleExp:connect(centeredMovingAvg)
 
 		local energyBuff2 = BufferSink.new()
