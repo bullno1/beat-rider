@@ -6,8 +6,7 @@ return component(..., function()
 	depends "glider.Actor"
 
 	msg("onCreate", function(self, ent)
-		local filePath = "assets/sfx/GalaxySupernova.mp3"
-		ent:spawnCoroutine(analyze, self, ent, filePath)
+		ent:spawnCoroutine(analyze, self, ent, Director.getSceneData())
 	end)
 
 	function analyze(self, ent, path)

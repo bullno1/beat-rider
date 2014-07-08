@@ -35,7 +35,7 @@ return module(function()
 		frontBuffer:setClearDepth(true)
 
 		if config.firstScene then
-			changeScene(config.firstScene)
+			changeScene(config.firstScene, config.sceneData)
 		end
 	end
 

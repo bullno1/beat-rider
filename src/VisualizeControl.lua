@@ -2,13 +2,13 @@ local Entity = require "glider.Entity"
 local Options = require "glider.Options"
 local Asset = require "glider.Asset"
 local Screen = require "glider.Screen"
+local Director = require "glider.Director"
 
 return component(..., function()
 	depends "glider.Actor"
 
 	msg("onCreate", function(self, ent)
-		local path = "assets/sfx/GalaxySupernova.mp3"
-		ent:spawnCoroutine(visualize, self, ent, path)
+		ent:spawnCoroutine(visualize, self, ent, Director.getSceneData())
 	end)
 
 	function visualize(self, ent, path)
@@ -66,10 +66,7 @@ return component(..., function()
 		local energyData = buffers.energy:getAsTable(true)
 		local energyBaseData = buffers.energyBase:getAsTable(true)
 		for i, y in ipairs(energyData) do
-			local adjPointOffset = i == 1 and 1 or -1
-			local baseElevation = math.atan(energyBaseData[i + adjPointOffset] - energyBaseData[i], adjPointOffset)
-			local elevation = (energyData[i] - energyBaseData[i]) * math.cos(baseElevation)
-			energyData[i] = energyData[i] - energyBaseData[i]
+			energyData[i] = energyBaseData[i] - energyData[i]
 		end
 
 		--local min, max = energyData[1], energyData[1]
@@ -155,7 +152,7 @@ return component(..., function()
 			local alphaIndex = math.floor(time * sampRate / hopSize) + 1
 			local energy = alphas[alphaIndex]
 			local alpha
-			if energy > 0.05 then
+			if energy > 0.07 then
 				alpha = 1
 			elseif energy < 0.002 then
 				alpha = 0.0

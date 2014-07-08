@@ -6,7 +6,8 @@ glider.start{
 			"GameLogic",
 			"Visual"
 		},
-		firstScene = "analyze"
+		firstScene = "visualize",
+		sceneData = "assets/sfx/GalaxySupernova.mp3"
 	},
 	DebugLines = {
 		PARTITION_CELLS        = false,
