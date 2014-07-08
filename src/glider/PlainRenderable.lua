@@ -15,6 +15,7 @@ return component(..., function()
 
 	msg("onCreate", function(self, ent)
 		local prop = ent:_requestTransformType("MOAIProp")
+		prop:setBlendMode(MOAIProp.BLEND_ADD)
 		prop.entity = ent
 	end)
 end)
