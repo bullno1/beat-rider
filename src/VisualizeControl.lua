@@ -51,6 +51,7 @@ return component(..., function()
 		local colors = {
 			bpm = { 1, 0, 0},
 			energy = { 0, 1, 0 },
+			energyBase = { 0, 1, 0, 0.2 },
 			slope = { 0, 0, 1 }
 		}
 
@@ -193,7 +194,7 @@ return component(..., function()
 		phaseVocoder:connect(energyFunc)
 
 		local doubleExp = DoubleExp.new()
-		doubleExp:setSmoothingFactors(0.01, 0.03)
+		doubleExp:setSmoothingFactors(0.03, 0.03)
 		energyFunc:connect(doubleExp)
 
 		local centeredMovingAvg = CenteredMovingAvg.new()
@@ -202,6 +203,18 @@ return component(..., function()
 
 		local energyBuff = BufferSink.new()
 		centeredMovingAvg:connect(energyBuff)
+
+		-- Energy base
+		local doubleExp = DoubleExp.new()
+		doubleExp:setSmoothingFactors(0.03, 0.03)
+		energyFunc:connect(doubleExp)
+
+		local centeredMovingAvg = CenteredMovingAvg.new()
+		centeredMovingAvg:setWindowRadius(20)
+		doubleExp:connect(centeredMovingAvg)
+
+		local energyBuff2 = BufferSink.new()
+		centeredMovingAvg:connect(energyBuff2)
 
 		local rawEnergyBuff = BufferSink.new()
 		energyFunc:connect(rawEnergyBuff)
@@ -225,6 +238,7 @@ return component(..., function()
 		local buffers = {
 			bpm = bpmBuff,
 			energy = energyBuff,
+			energyBase = energyBuff2,
 			onset = onsetBuff,
 			slope = slopeBuff,
 			rawEnergy = rawEnergyBuff
