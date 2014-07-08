@@ -7,14 +7,14 @@ return component(..., function()
 	depends "glider.Actor"
 
 	msg("onCreate", function(self, ent)
-		local path = "assets/sfx/Radioactive.mp3"
+		local path = "assets/sfx/GalaxySupernova.mp3"
 		ent:spawnCoroutine(visualize, self, ent, path)
 	end)
 
 	function visualize(self, ent, path)
 		local txtProgress = Entity.getByName("txtProgress")
 
-		local pipeline, bpmBuff, energyBuff = buildAnalysisPipeline(path)
+		local pipeline, buffers = buildAnalysisPipeline(path)
 		local progressFmt = "Analyzing %d%%"
 		while pipeline:pump() do
 			local progress = pipeline:getProgress()
@@ -34,29 +34,41 @@ return component(..., function()
 		until status ~= UntzSoundEx.STATUS_MORE
 
 		local sampRate = song:getInfo()
-
-		local graphs = {}
-
-		local timeScale = 200
+		local timeScale = 250
 		local hopSize = Options.getDevOptions().analysis.hop_size
-		local bpmGraph = generateGraph(bpmBuff:getAsTable(), sampRate, hopSize, timeScale, {1, 0, 0})
-		local mesh = Entity.create("glider/Mesh")
-		mesh:getProp():setDeck(bpmGraph)
-		mesh:setPartitionName("Visualization")
-		table.insert(graphs, mesh)
-
-		local energyGraph = generateGraph(energyBuff:getAsTable(true), sampRate, hopSize, timeScale, {0, 1, 0})
-		local mesh = Entity.create("glider/Mesh")
-		mesh:getProp():setDeck(energyGraph)
-		mesh:setPartitionName("Visualization")
-		table.insert(graphs, mesh)
-
 		local screenWidth, screenHeight = Screen.getSize "dp"
-		for i, graph in ipairs(graphs) do
+
+		local function showGraph(graphMesh)
+			local graph = Entity.create("glider/Mesh")
+			graph:getProp():setDeck(graphMesh)
+			graph:setPartitionName("Visualization")
 			local xMin, yMin, zMin, xMax, yMax, zMax = graph:getProp():getBounds()
 			local height = yMax - yMin
 			local yScale = screenHeight / height
 			graph:setYScale(yScale)
+		end
+
+		local colors = {
+			bpm = { 1, 0, 0},
+			energy = { 0, 1, 0}
+		}
+
+		for graphName, color in pairs(colors) do
+			local graphData = buffers[graphName]:getAsTable(true)
+			print(graphName, #graphData)
+			local graphMesh = generateGraph(graphData, sampRate, hopSize, timeScale, color)
+			showGraph(graphMesh)
+		end
+
+		local colors = {
+			onset = { 1, 1, 0, 0.5 }
+		}
+
+		local rawEnergy = buffers.rawEnergy:getAsTable(true)
+		for markerName, color in pairs(colors) do
+			local graphData = buffers[markerName]:getAsTable()
+			local graphMesh = generateMarker(graphData, sampRate, hopSize, timeScale, color, rawEnergy)
+			showGraph(graphMesh)
 		end
 
 		song:play()
@@ -70,7 +82,7 @@ return component(..., function()
 			pos = pos + step
 			local err = song:getPosition() - pos
 			txtProgress:setText(fmt:format(position, MOAISim.getPerformance(), math.abs(err), step))
-			graphCam:setX(pos * 200)
+			graphCam:setX(pos * timeScale)
 			pos = pos + 0.001 * err
 			step = coroutine.yield()
 		end
@@ -101,6 +113,36 @@ return component(..., function()
 		return track
 	end
 
+	function generateMarker(data, sampRate, hopSize, timeScale, color, alphas)
+		local format = MOAIVertexFormat.new()
+		format:declareCoord(1, MOAIVertexFormat.GL_FLOAT, 2)
+		format:declareColor(2, MOAIVertexFormat.GL_UNSIGNED_BYTE)
+
+		local vbo = MOAIVertexBuffer.new()
+		vbo:setFormat(format)
+
+		vbo:reserveVerts(#data * 2)
+		for index, time in ipairs(data) do
+			local x = time * timeScale
+			local alphaIndex = math.floor(time * sampRate / hopSize) + 1
+			local alpha = alphas[alphaIndex] > 0.05 and 1 or 0.2
+			local r, g, b = unpack(color)
+			vbo:writeFloat(x, 1)
+			vbo:writeColor32(r, g, b, alpha)
+			vbo:writeFloat(x, 0)
+			vbo:writeColor32(r, g, b, alpha)
+		end
+		vbo:bless()
+
+		local track = MOAIMesh.new()
+		track:setVertexBuffer(vbo)
+		track:setPrimType(MOAIMesh.GL_LINES)
+		local graphShader = Asset.get("shader", "graph")
+		track:setShader(graphShader)
+
+		return track
+	end
+
 	function buildAnalysisPipeline(path)
 		local opts = Options.getDevOptions().analysis
 		local source = PcmSource.new()
@@ -117,38 +159,57 @@ return component(..., function()
 		local bpmBuff = BufferSink.new()
 		tempoDetector:getBpmStream():connect(bpmBuff)
 
-		--local beatBuff = BufferSink.new()
-		--tempoDetector:getBeatStream():connect(beatBuff)
+		local beatBuff = BufferSink.new()
+		tempoDetector:getBeatStream():connect(beatBuff)
 
-		--local onsetDetector = OnsetDetector.new()
-		--onsetDetector:setMethod(opts.onset_detection.method)
-		--onsetDetector:setChunkSize(hopSize)
-		--onsetDetector:setSampleRate(sampRate)
-		--source:connect(onsetDetector)
+		local onsetDetector = OnsetDetector.new()
+		onsetDetector:setMethod("hfc")
+		onsetDetector:setChunkSize(hopSize)
+		onsetDetector:setSampleRate(sampRate)
+		source:connect(onsetDetector)
 
-		--local onsetBuff = BufferSink.new()
-		--onsetDetector:connect(onsetBuff)
+		local onsetBuff = BufferSink.new()
+		onsetDetector:connect(onsetBuff)
 
 		local phaseVocoder = PhaseVocoder.new()
 		phaseVocoder:setChunkSize(hopSize)
 		source:connect(phaseVocoder)
 
+		-- Energy
 		local energyFunc = SpecDesc.new()
 		energyFunc:setFunction("energy")
 		energyFunc:setFrameSize(hopSize * 2)
 		phaseVocoder:connect(energyFunc)
 
 		local doubleExp = DoubleExp.new()
-		doubleExp:setSmoothingFactors(opts.track.data_smoothing_factor, opts.track.trend_smoothing_factor)
+		doubleExp:setSmoothingFactors(0.01, 0.03)
 		energyFunc:connect(doubleExp)
 
 		local centeredMovingAvg = CenteredMovingAvg.new()
-		centeredMovingAvg:setWindowRadius(opts.track.window_radius)
+		centeredMovingAvg:setWindowRadius(10)
 		doubleExp:connect(centeredMovingAvg)
 
 		local energyBuff = BufferSink.new()
 		centeredMovingAvg:connect(energyBuff)
 
-		return source, bpmBuff, energyBuff
+		local rawEnergyBuff = BufferSink.new()
+		energyFunc:connect(rawEnergyBuff)
+
+		-- Speed
+		local diff = Difference.new()
+		centeredMovingAvg:connect(diff)
+
+		local speedBuff = BufferSink.new()
+		diff:connect(speedBuff)
+
+		local buffers = {
+			bpm = bpmBuff,
+			energy = energyBuff,
+			speed = speedBuff,
+			onset = onsetBuff,
+			rawEnergy = rawEnergyBuff
+		}
+
+		return source, buffers
 	end
 end)
