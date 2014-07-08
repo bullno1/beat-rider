@@ -13,6 +13,7 @@
 #include "SpecDesc.hpp"
 #include "CenteredMovingAvg.hpp"
 #include "DoubleExp.hpp"
+#include "Difference.hpp"
 
 void MOAIAubioAppInitialize()
 {
@@ -42,6 +43,8 @@ void MOAIAubioContextInitialize()
 
 	REGISTER_LUA_CLASS(CenteredMovingAvg);
 	REGISTER_LUA_CLASS(DoubleExp);
+
+	REGISTER_LUA_CLASS(Difference);
 
 	REGISTER_LUA_CLASS(UntzSoundEx);
 }
