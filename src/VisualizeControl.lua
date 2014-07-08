@@ -125,7 +125,15 @@ return component(..., function()
 		for index, time in ipairs(data) do
 			local x = time * timeScale
 			local alphaIndex = math.floor(time * sampRate / hopSize) + 1
-			local alpha = alphas[alphaIndex] > 0.05 and 1 or 0.2
+			local energy = alphas[alphaIndex]
+			local alpha
+			if energy > 0.05 then
+				alpha = 1
+			elseif energy < 0.002 then
+				alpha = 0.0
+			else
+				alpha = 0.2
+			end
 			local r, g, b = unpack(color)
 			vbo:writeFloat(x, 1)
 			vbo:writeColor32(r, g, b, alpha)
@@ -163,7 +171,7 @@ return component(..., function()
 		tempoDetector:getBeatStream():connect(beatBuff)
 
 		local onsetDetector = OnsetDetector.new()
-		onsetDetector:setMethod("hfc")
+		onsetDetector:setMethod("kl")
 		onsetDetector:setChunkSize(hopSize)
 		onsetDetector:setSampleRate(sampRate)
 		source:connect(onsetDetector)
