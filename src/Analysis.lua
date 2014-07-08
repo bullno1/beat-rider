@@ -13,7 +13,7 @@ return module(function()
 		if cachedContent then
 			return cachedContent
 		else
-			local pipeline, bpmBuff, beatBuff, onsetBuff, energyBuff = buildAnalysisPipeline(path)
+			local pipeline, buffers = buildAnalysisPipeline(path)
 			if pipeline == nil then return end
 
 			-- Pump until finish or terminated
@@ -22,12 +22,19 @@ return module(function()
 			end
 
 			-- Generate notes
-			local onsets = onsetBuff:getAsTable()
-			local beats = beatBuff:getAsTable()
-			local notes = generateNotes(onsets, beats)
+			local onsets = buffers.onsets:getAsTable()
+			local rawEnergy = buffers.rawEnergy:getAsTable(true)
+			local sampRate = pipeline:getInfo()
+			local notes = generateNotes(onsets, rawEnergy, sampRate, opts.hop_size)
+
+			-- Generate track
+			local wave = buffers.wave:getAsTable(true)
+			local base = buffers.base:getAsTable(true)
+			local track = generateTrack(wave, base)
+
 			local result = {
 				notes = notes,
-				track = energyBuff:getAsTable(true)
+				track = track
 			}
 			writeCache(path, result)
 			return result
@@ -85,36 +92,30 @@ return module(function()
 		return MOAIEnvironment.cacheDirectory.."/"..absPath:gsub("/","-").."-"..getAlgoHash()..".cache"
 	end
 
-	function generateNotes(onsets, beats)
+	function generateTrack(wave, base)
+		local result = {}
+
+		for i, baseHeight in ipairs(base) do
+			result[i] = baseHeight - wave[i]
+		end
+
+		return result
+	end
+
+	function generateNotes(onsets, energy, sampRate, hopSize)
 		local notes = {}
-		local beatIndex = 1
-		local numBeats = #beats
-		local numOnsets = #onsets
 		local lastTime = 0
 		local lastCol = 1
 		local noteOpts = opts.notes
-		local maxDistanceToBeat = noteOpts.max_distance_to_beat
+		local energyThreshold = noteOpts.energy_threshold
 		local clusterMaxLength = noteOpts.cluster_max_length
 		local clusterMaxSize = noteOpts.cluster_max_size
 		local currentClusterSize = 0
 
 		for index, onsetTime in ipairs(onsets) do
-			-- If the note is near to a beat, it is a score note
-			-- otherwise, it is a penalty note
-
-			-- Adjust beatIndex so that it is the closest beat before this note
-			local nextBeat = beats[math.min(beatIndex + 1, numBeats)]
-			while nextBeat < onsetTime do
-				nextBeat = beats[math.min(beatIndex + 1, numBeats)]
-				beatIndex = beatIndex + 1
-			end
-
-			local currentBeat = beats[beatIndex]
-			local distanceNextBeat = math.abs(nextBeat - onsetTime)
-			local distanceToCurrentBeat = math.abs(currentBeat - onsetTime)
-			local distanceToNearestBeat = math.min(distanceNextBeat, distanceToCurrentBeat)
-
-			local isScore = distanceToNearestBeat <= maxDistanceToBeat
+			local energyIndex = math.floor(onsetTime * sampRate / hopSize + 1.5)
+			local energy = energy[energyIndex]
+			local colored = energy >= energyThreshold
 
 			-- Column is random with forced clustering
 			local col
@@ -127,7 +128,7 @@ return module(function()
 			end
 			lastTime = onsetTime
 
-			table.insert(notes, { onsetTime, col, isScore })
+			table.insert(notes, { onsetTime, col, colored })
 		end
 
 		return notes
@@ -141,17 +142,7 @@ return module(function()
 		local sampRate = source:getInfo()
 		local hopSize = opts.hop_size
 
-		local tempoDetector = TempoDetector.new()
-		tempoDetector:setChunkSize(hopSize)
-		tempoDetector:setSampleRate(sampRate)
-		source:connect(tempoDetector)
-
-		local bpmBuff = BufferSink.new()
-		tempoDetector:getBpmStream():connect(bpmBuff)
-
-		local beatBuff = BufferSink.new()
-		tempoDetector:getBeatStream():connect(beatBuff)
-
+		-- Onset
 		local onsetDetector = OnsetDetector.new()
 		onsetDetector:setMethod(opts.onset_detection.method)
 		onsetDetector:setChunkSize(hopSize)
@@ -161,10 +152,12 @@ return module(function()
 		local onsetBuff = BufferSink.new()
 		onsetDetector:connect(onsetBuff)
 
+		-- Phase vocoder
 		local phaseVocoder = PhaseVocoder.new()
 		phaseVocoder:setChunkSize(hopSize)
 		source:connect(phaseVocoder)
 
+		-- Energy
 		local energyFunc = SpecDesc.new()
 		energyFunc:setFunction("energy")
 		energyFunc:setFrameSize(hopSize * 2)
@@ -174,14 +167,32 @@ return module(function()
 		doubleExp:setSmoothingFactors(opts.track.data_smoothing_factor, opts.track.trend_smoothing_factor)
 		energyFunc:connect(doubleExp)
 
-		local centeredMovingAvg = CenteredMovingAvg.new()
-		centeredMovingAvg:setWindowRadius(opts.track.window_radius)
-		doubleExp:connect(centeredMovingAvg)
+		-- Track
+		local waveAvg = CenteredMovingAvg.new()
+		waveAvg:setWindowRadius(opts.track.wave_window_radius)
+		doubleExp:connect(waveAvg)
 
-		local energyBuff = BufferSink.new()
-		centeredMovingAvg:connect(energyBuff)
+		local waveBuff = BufferSink.new()
+		waveAvg:connect(waveBuff)
 
-		return source, bpmBuff, beatBuff, onsetBuff, energyBuff
+		local baseAvg = CenteredMovingAvg.new()
+		baseAvg:setWindowRadius(opts.track.base_window_radius)
+		doubleExp:connect(baseAvg)
+
+		local baseBuff = BufferSink.new()
+		baseAvg:connect(baseBuff)
+
+		local rawEnergyBuff = BufferSink.new()
+		energyFunc:connect(rawEnergyBuff)
+
+		local buffers = {
+			onsets = onsetBuff,
+			rawEnergy = rawEnergyBuff,
+			base = baseBuff,
+			wave = waveBuff
+		}
+
+		return source, buffers
 	end
 
 	-- A hash of the analysis parameters and this module's bytecode
