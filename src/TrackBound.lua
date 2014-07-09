@@ -3,8 +3,6 @@ local Entity = require "glider.Entity"
 return component(..., function()
 	depends "glider.Transform"
 
-	property("Track")
-
 	property("TrackPosition",
 		function(self, ent)
 			return self.trackPosition

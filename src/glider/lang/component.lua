@@ -25,10 +25,10 @@ global("component", function(name, descriptor)
 		assert(props[name] == nil, "Property "..name.." already exists")
 
 		if getter == nil and setter == nil then--simple property
-			local propValue
+			local propKey = "$"..name
 			props[name] = {
-				getter = function(self, ent) return propValue end,
-				setter = function(self, ent, val) propValue = val end
+				getter = function(self, ent) return self[propKey] end,
+				setter = function(self, ent, val) self[propKey] = val end
 			}
 		else
 			props[name] = {
