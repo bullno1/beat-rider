@@ -10,20 +10,34 @@ return component(..., function()
 	end)
 
 	function analyze(self, ent, path)
-		local result = Analysis.analyze(path, reportProgress)
-		if result then
-			result.path = path
-			Director.changeScene("ride", result)
-		else
-			Entity.getByName("txtProgress"):setText("Failed")
-		end
-	end
-
-	local statusTemplate = "Loading %d%%"
-	function reportProgress(progress)
+		-- Analyze
+		local statusTemplate = "Analyzing %d%%"
 		local txtProgress = Entity.getByName("txtProgress")
-		txtProgress:setText(statusTemplate:format(math.floor(progress * 100)))
-		coroutine.yield()
-		return true
+		local function reportProgress(progress)
+			txtProgress:setText(statusTemplate:format(math.floor(progress * 100)))
+			coroutine.yield()
+			return true
+		end
+
+		local result = Analysis.analyze(path, reportProgress)
+		if not result then
+			Entity.getByName("txtProgress"):setText("Failed")
+			return
+		end
+
+		-- Load song
+		statusTemplate = "Loading %d%%"
+		local song = UntzSoundEx.new()
+		assert(song:open(path), "Failed to load song")
+		repeat
+			local status, progress = song:loadChunk(65536)
+			if status == UntzSoundEx.STATUS_MORE then
+				reportProgress(progress)
+			end
+			coroutine.yield()
+		until status ~= UntzSoundEx.STATUS_MORE
+
+		result.song = song
+		Director.changeScene("ride", result)
 	end
 end)

@@ -6,17 +6,46 @@
 	</partitions>
 
 	<entities>
-		<preset name="glider/Camera">
-			<string name="Name">RideCamera</string>
-			<number name="Y">50</number>
-			<number name="Z">120</number>
-			<number name="XRotation">-12</number>
-		</preset>
+		<entity>
+			<components>
+				<component name="glider.PlainRenderable" />
+				<component name="Track" />
+			</components>
+			<properties>
+				<string name="Name">Track</string>
+				<string name="PartitionName">Objects</string>
+			</properties>
+		</entity>
+
+		<entity>
+			<components>
+				<component name="RideController" />
+			</components>
+			<properties>
+				<string name="Name">RideController</string>
+				<string name="UpdatePhase">GameLogic</string>
+			</properties>
+		</entity>
+
+		<entity>
+			<components>
+				<preset name="glider/Camera" />
+				<component name="BeatRider" />
+			</components>
+			<properties>
+				<string name="Name">RideCamera</string>
+				<number name="Y">50</number>
+				<number name="Z">120</number>
+				<number name="XRotation">-12</number>
+				<string name="UpdatePhase">GameLogic</string>
+			</properties>
+		</entity>
 
 		<entity>
 			<components>
 				<preset name="glider/Mesh" />
 				<component name="Ship" />
+				<component name="BeatRider" />
 			</components>
 			<properties>
 				<string name="Name">Ship</string>
@@ -35,15 +64,6 @@
 			<list name="TextAlignment">left, top</list>
 			<string name="Text"> yolo </string>
 		</preset>
-
-		<entity>
-			<components>
-				<component name="RideController" />
-			</components>
-			<properties>
-				<string name="UpdatePhase">GameLogic</string>
-			</properties>
-		</entity>
 	</entities>
 
 	<viewports>

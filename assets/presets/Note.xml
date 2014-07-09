@@ -2,6 +2,7 @@
 <preset>
 	<components>
 		<preset name="glider/Sprite" />
+		<component name="TrackBound" />
 	</components>
 	<properties>
 		<string name="SpriteName">gem</string>
