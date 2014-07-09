@@ -69,16 +69,6 @@ return component(..., function()
 			energyData[i] = energyBaseData[i] - energyData[i]
 		end
 
-		--local min, max = energyData[1], energyData[1]
-		--for i, y in ipairs(energyData) do
-			--min = math.min(min, y)
-			--max = math.max(max, y)
-		--end
-
-		--for i, y in ipairs(energyData) do
-			--energyData[i] = (y - min) / (max - min)
-		--end
-
 		local wave = showGraph(generateGraph(energyData, sampRate, hopSize, timeScale, {1, 1, 1, 1}))
 		wave:setYScale(300)
 		wave:setY(screenHeight / 2)
@@ -147,15 +137,14 @@ return component(..., function()
 		vbo:setFormat(format)
 
 		vbo:reserveVerts(#data * 2)
+		local threshold = Options.getDevOptions().analysis.notes.energy_threshold
 		for index, time in ipairs(data) do
 			local x = time * timeScale
 			local alphaIndex = math.floor(time * sampRate / hopSize) + 1
 			local energy = alphas[alphaIndex]
 			local alpha
-			if energy > 0.07 then
+			if energy >= threshold then
 				alpha = 1
-			elseif energy < 0.002 then
-				alpha = 0.0
 			else
 				alpha = 0.2
 			end
@@ -196,7 +185,7 @@ return component(..., function()
 		tempoDetector:getBeatStream():connect(beatBuff)
 
 		local onsetDetector = OnsetDetector.new()
-		onsetDetector:setMethod("kl")
+		onsetDetector:setMethod(opts.onset_detection.method)
 		onsetDetector:setChunkSize(hopSize)
 		onsetDetector:setSampleRate(sampRate)
 		source:connect(onsetDetector)
@@ -215,11 +204,11 @@ return component(..., function()
 		phaseVocoder:connect(energyFunc)
 
 		local doubleExp = DoubleExp.new()
-		doubleExp:setSmoothingFactors(0.03, 0.03)
+		doubleExp:setSmoothingFactors(opts.track.data_smoothing_factor, opts.track.trend_smoothing_factor)
 		energyFunc:connect(doubleExp)
 
 		local centeredMovingAvg = CenteredMovingAvg.new()
-		centeredMovingAvg:setWindowRadius(15)
+		centeredMovingAvg:setWindowRadius(opts.track.wave_window_radius)
 		doubleExp:connect(centeredMovingAvg)
 
 		local energyBuff = BufferSink.new()
@@ -227,7 +216,7 @@ return component(..., function()
 
 		-- Energy base
 		local centeredMovingAvg = CenteredMovingAvg.new()
-		centeredMovingAvg:setWindowRadius(30)
+		centeredMovingAvg:setWindowRadius(opts.track.base_window_radius)
 		doubleExp:connect(centeredMovingAvg)
 
 		local energyBuff2 = BufferSink.new()
