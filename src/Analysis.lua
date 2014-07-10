@@ -123,10 +123,13 @@ return module(function()
 				col = lastCol
 				currentClusterSize = currentClusterSize + 1
 			else
-				col = math.random(3)
+				repeat
+					col = math.random(3)
+				until col ~= lastCol
 				currentClusterSize = 0
 			end
 			lastTime = onsetTime
+			lastCol = col
 
 			table.insert(notes, { onsetTime, col, colored })
 		end
