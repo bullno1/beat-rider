@@ -70,8 +70,8 @@ return component(..., function()
 			trackTransform:forceUpdate()
 
 			local x, y, z = trackTransform:modelToWorld(0, height, 0)
-			vbo:writeFloat(halfTrackWidth, y, z)
 			vbo:writeFloat(-halfTrackWidth, y, z)
+			vbo:writeFloat(halfTrackWidth, y, z)
 
 			if index == 1 then
 				table.insert(rotations, { 0, 0, 0 })

@@ -41,6 +41,21 @@ return component(..., function()
 		end
 	)
 
+	property("CullMode",
+		function(self, ent)
+			return self.cullMode
+		end,
+		function(self, ent, val)
+			self.cullMode = val
+			ent:getProp():setCullMode(MOAIProp["CULL_"..val:upper()])
+		end
+	)
+
+	msg("onCreate", function(self, ent)
+		self.depthTest = "disable"
+		self.cullMode = "none"
+	end)
+
 	msg("onDestroy", function(self, ent)
 		ent:setPartitionName(nil)
 	end)

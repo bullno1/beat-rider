@@ -4,6 +4,7 @@
 		<component name="glider.PlainRenderable" />
 	</components>
 	<properties>
-		<string name="DepthTest">less</string>
+		<string name="DepthTest">less_equal</string>
+		<string name="CullMode">back</string>
 	</properties>
 </preset>
