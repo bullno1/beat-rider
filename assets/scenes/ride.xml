@@ -8,7 +8,7 @@
 	<entities>
 		<entity>
 			<components>
-				<component name="glider.PlainRenderable" />
+				<preset name="glider/Mesh" />
 				<component name="Track" />
 			</components>
 			<properties>
