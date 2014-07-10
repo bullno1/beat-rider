@@ -1,0 +1,20 @@
+#!/bin/sh
+
+if [ $# -ne 1 ]; then
+	echo "Usage: upload-apk <path-to-apk>"
+	exit 1
+fi
+
+if [ ! -f $1 ]; then
+	echo "File does not exist"
+	exit 1
+fi
+
+curl \
+	-v \
+	--progress-bar \
+	--anyauth \
+	-u rubycell \
+	http://rubycell.com/download/upload.php \
+	--next http://rubycell.com/download/uploadAndroid.php \
+	-F uploaded=@$1
