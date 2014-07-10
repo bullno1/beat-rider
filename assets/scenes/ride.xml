@@ -37,6 +37,7 @@
 				<number name="Y">50</number>
 				<number name="Z">120</number>
 				<number name="XRotation">-12</number>
+				<string name="RotationMode">base</string>
 				<string name="UpdatePhase">GameLogic</string>
 			</properties>
 		</entity>
@@ -52,6 +53,7 @@
 				<string name="PartitionName">Objects</string>
 				<string name="DeckName">mesh:spaceship.dae</string>
 				<string name="UpdatePhase">GameLogic</string>
+				<string name="RotationMode">base</string>
 			</properties>
 		</entity>
 

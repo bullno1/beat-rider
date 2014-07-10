@@ -3,6 +3,8 @@ local Entity = require "glider.Entity"
 return component(..., function()
 	depends "glider.Transform"
 
+	property("RotationMode")
+
 	property("TrackPosition",
 		function(self, ent)
 			return self.trackPosition
@@ -11,8 +13,14 @@ return component(..., function()
 			self.trackPosition = val
 
 			local track = Entity.getByName("Track")
-			local location, rotation = track:getTrackTransform(val)
-			self.trackTransform:setLoc(unpack(location))
+			local trackTransform = self.trackTransform
+			trackTransform:setLoc(track:getTrackPosition(val))
+
+			if ent:getRotationMode() == "track" then
+				trackTransform:setRot(track:getTrackOrientation(val))
+			else
+				trackTransform:setRot(track:getBaseOrientation(val))
+			end
 		end
 	)
 
@@ -21,5 +29,7 @@ return component(..., function()
 		local trackTransform = MOAITransform.new()
 		entTransform:setAttrLink(MOAITransform.INHERIT_TRANSFORM, trackTransform, MOAITransform.TRANSFORM_TRAIT)
 		self.trackTransform = trackTransform
+
+		ent:setRotationMode("track")
 	end)
 end)

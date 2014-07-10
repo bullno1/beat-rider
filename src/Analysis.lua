@@ -34,7 +34,8 @@ return module(function()
 
 			local result = {
 				notes = notes,
-				track = track
+				track = track,
+				slope = buffers.slope:getAsTable(true)
 			}
 			writeCache(path, result)
 			return result
@@ -185,6 +186,22 @@ return module(function()
 		local baseBuff = BufferSink.new()
 		baseAvg:connect(baseBuff)
 
+		-- Slope
+		local specflux = SpecDesc.new()
+		specflux:setFunction("specflux")
+		phaseVocoder:connect(specflux)
+
+		local doubleExp = DoubleExp.new()
+		doubleExp:setSmoothingFactors(0.01, 0.1)
+		specflux:connect(doubleExp)
+
+		local centeredMovingAvg = CenteredMovingAvg.new()
+		centeredMovingAvg:setWindowRadius(10)
+		doubleExp:connect(centeredMovingAvg)
+
+		local slopeBuff = BufferSink.new()
+		centeredMovingAvg:connect(slopeBuff)
+
 		local rawEnergyBuff = BufferSink.new()
 		energyFunc:connect(rawEnergyBuff)
 
@@ -192,7 +209,8 @@ return module(function()
 			onsets = onsetBuff,
 			rawEnergy = rawEnergyBuff,
 			base = baseBuff,
-			wave = waveBuff
+			wave = waveBuff,
+			slope = slopeBuff
 		}
 
 		return source, buffers

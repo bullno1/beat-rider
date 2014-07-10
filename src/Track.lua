@@ -7,24 +7,39 @@ return component(..., function()
 		local sceneData = Director.getSceneData()
 		local sampRate = sceneData.song:getInfo()
 		local trackData = sceneData.track
-		local trackMesh, trackPositions = createTrackMesh(trackData, sampRate)
+		local slope = sceneData.slope
+		local trackMesh, trackPositions, trackRotations, baseRotations = createTrackMesh(trackData, slope, sampRate)
 
 		ent:getProp():setDeck(trackMesh)
 
-		self.trackPositions = trackPositions
-		self.sampRate = sampRate
-		self.hopSize = Options.getDevOptions().analysis.hop_size
-		self.numPositions = #trackPositions
+		local hopSize = Options.getDevOptions().analysis.hop_size
+		self.trackPositionAt = toFunctionOfTime(trackPositions, sampRate, hopSize)
+		self.trackOrientationAt = toFunctionOfTime(trackRotations, sampRate, hopSize)
+		self.baseOrientationAt = toFunctionOfTime(baseRotations, sampRate, hopSize)
 	end)
 
-	query("getTrackTransform", function(self, ent, time)
-		local sampRate = self.sampRate
-		local hopSize = self.hopSize
-		local hopIndex = math.clamp(math.floor(time * sampRate / hopSize + 1.5), 0, self.numPositions)
-		return self.trackPositions[hopIndex]
+	query("getTrackPosition", function(self, ent, time)
+		return unpack(self.trackPositionAt(time))
 	end)
 
-	function createTrackMesh(trackData, sampRate)
+	query("getTrackOrientation", function(self, ent, time)
+		return unpack(self.trackOrientationAt(time))
+	end)
+
+	query("getBaseOrientation", function(self, ent, time)
+		return unpack(self.baseOrientationAt(time))
+	end)
+
+	function toFunctionOfTime(data, sampRate, hopSize)
+		local numPoints = #data
+
+		return function(time)
+			local index = math.clamp(math.floor(time * sampRate / hopSize + 1.5), 0, numPoints)
+			return data[index]
+		end
+	end
+
+	function createTrackMesh(trackData, slope, sampRate)
 		-- VBO
 		local format = MOAIVertexFormat.new()
 		format:declareCoord(1, MOAIVertexFormat.GL_FLOAT, 3)
@@ -43,16 +58,31 @@ return component(..., function()
 		local trackTransform = MOAITransform.new()
 		local trackStep = -hopSize / sampRate * timeScale
 		local positions = {}
+		local rotations = {}
+		local baseRotations = {}
 		for index, y in ipairs(trackData) do
 			local height = maxBumpHeight * y
-			trackTransform:setLoc(trackTransform:modelToWorld(0, 0, trackStep))
+			local slopeFactor = slope[index] * 2 - 1
+			local angle = - slopeFactor * 15
+
+			trackTransform:setRot(angle, 0, 0)
+			trackTransform:setLoc(trackTransform:modelToWorld(0, 0, trackStep - slopeFactor * 5))
 			trackTransform:forceUpdate()
 
 			local x, y, z = trackTransform:modelToWorld(0, height, 0)
 			vbo:writeFloat(halfTrackWidth, y, z)
 			vbo:writeFloat(-halfTrackWidth, y, z)
 
-			table.insert(positions, {x, y, z})
+			if index == 1 then
+				table.insert(rotations, { 0, 0, 0 })
+			else
+				local lastX, lastY, lastZ = unpack(positions[index - 1])
+				local dx, dy, dz = x - lastX, y - lastY, z - lastZ
+				local xRot = math.deg(math.atan2(dy, -dz))
+				table.insert(rotations, { xRot, 0, 0 })
+			end
+			table.insert(baseRotations, {trackTransform:getRot()})
+			table.insert(positions, { x, y, z })
 		end
 		vbo:bless()
 
@@ -72,6 +102,6 @@ return component(..., function()
 		trackShader:setAttr(2, 1 / textureHeight / 4)
 		trackMesh:setShader(trackShader)
 
-		return trackMesh, positions
+		return trackMesh, positions, rotations, baseRotations
 	end
 end)
