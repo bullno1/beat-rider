@@ -53,6 +53,8 @@ return component(..., function()
 		local halfTrackWidth = opts.track_width / 2
 		local maxBumpHeight = opts.max_bump_height
 		local hopSize = devOpts.analysis.hop_size
+		local maxElevation = opts.max_elevation
+		local maxSpeedVariation = opts.max_speed_variation
 
 		vbo:reserveVerts(#trackData * 2)
 		local trackTransform = MOAITransform.new()
@@ -62,11 +64,13 @@ return component(..., function()
 		local baseRotations = {}
 		for index, y in ipairs(trackData) do
 			local height = maxBumpHeight * y
-			local slopeFactor = slope[index] * 2 - 1
-			local angle = - slopeFactor * 15
+			local slopeFactor = slope[index] * 2 - 1 -- From [0, 1] to [-1, 1]
 
+			local angle = - slopeFactor * maxElevation
 			trackTransform:setRot(angle, 0, 0)
-			trackTransform:setLoc(trackTransform:modelToWorld(0, 0, trackStep - slopeFactor * 5))
+			
+			local step = trackStep + slopeFactor * maxSpeedVariation * trackStep
+			trackTransform:setLoc(trackTransform:modelToWorld(0, 0, step))
 			trackTransform:forceUpdate()
 
 			local x, y, z = trackTransform:modelToWorld(0, height, 0)
