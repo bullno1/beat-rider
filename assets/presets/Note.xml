@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <preset>
 	<components>
-		<preset name="glider/Sprite" />
+		<preset name="glider/Mesh" />
 		<component name="TrackBound" />
 	</components>
 	<properties>
-		<string name="SpriteName">gem</string>
+		<string name="DeckName">mesh:cube.dae</string>
 		<string name="PartitionName">Objects</string>
-		<string name="DepthTest">less</string>
+		<string name="ShaderName">note</string>
 	</properties>
 </preset>

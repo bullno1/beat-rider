@@ -1,5 +1,6 @@
 local Director = require "glider.Director"
 local Entity = require "glider.Entity"
+local Asset = require "glider.Asset"
 
 return component(..., function()
 	depends "glider.Transform"
@@ -48,6 +49,16 @@ return component(..., function()
 		function(self, ent, val)
 			self.cullMode = val
 			ent:getProp():setCullMode(MOAIProp["CULL_"..val:upper()])
+		end
+	)
+
+	property("ShaderName",
+		function(self, ent)
+			return self.shaderName
+		end,
+		function(self, ent, val)
+			self.shaderName = val
+			ent:getProp():setShader(Asset.get("shader", val))
 		end
 	)
 
