@@ -165,7 +165,6 @@ return module(function()
 			local entry
 
 			if entrySpec.type == "layer" then
-				print(entrySpec.viewport)
 				entry = MOAILayer.new()
 				entry:setPartition(assert(partitions[entrySpec.partition], "Partition '"..entrySpec.partition.."' does not exists"))
 				entry:setViewport(assert(viewports[entrySpec.viewport], "Viewport '"..entrySpec.viewport.."' does not exists"))
