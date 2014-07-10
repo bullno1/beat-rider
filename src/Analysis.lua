@@ -192,11 +192,11 @@ return module(function()
 		phaseVocoder:connect(specflux)
 
 		local doubleExp = DoubleExp.new()
-		doubleExp:setSmoothingFactors(0.01, 0.1)
+		doubleExp:setSmoothingFactors(opts.slope.data_smoothing_factor, opts.slope.trend_smoothing_factor)
 		specflux:connect(doubleExp)
 
 		local centeredMovingAvg = CenteredMovingAvg.new()
-		centeredMovingAvg:setWindowRadius(10)
+		centeredMovingAvg:setWindowRadius(opts.slope.window_radius)
 		doubleExp:connect(centeredMovingAvg)
 
 		local slopeBuff = BufferSink.new()

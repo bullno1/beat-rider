@@ -7,6 +7,10 @@ analysis.track.trend_smoothing_factor = 0.03
 analysis.track.wave_window_radius     = 15
 analysis.track.base_window_radius     = 30
 
+analysis.slope.data_smoothing_factor  = 0.01
+analysis.slope.trend_smoothing_factor = 0.01
+analysis.slope.window_radius          = 10
+
 analysis.notes.energy_threshold   = 0.07
 analysis.notes.cluster_max_length = 0.3
 analysis.notes.cluster_max_size   = 3
