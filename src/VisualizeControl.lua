@@ -58,7 +58,6 @@ return component(..., function()
 
 		for graphName, color in pairs(colors) do
 			local graphData = buffers[graphName]:getAsTable(true)
-			print(graphName, #graphData)
 			local graphMesh = generateGraph(graphData, sampRate, hopSize, timeScale, color)
 			showGraph(graphMesh)
 		end
@@ -73,20 +72,53 @@ return component(..., function()
 		wave:setYScale(300)
 		wave:setY(screenHeight / 2)
 
-		local colors = {
-			onset = { 1, 1, 0, 0.5 }
-		}
-		local bpm = buffers.bpm:getAsTable()
-
+		local onsets = buffers.onset:getAsTable()
 		local rawEnergy = buffers.rawEnergy:getAsTable(true)
-		for markerName, color in pairs(colors) do
-			local graphData = buffers[markerName]:getAsTable()
-			local graphMesh = generateMarker(graphData, sampRate, hopSize, timeScale, color, rawEnergy)
-			showGraph(graphMesh)
+		local threshold = Options.getDevOptions().analysis.notes.energy_threshold
+ 
+		local onsetAlphas = {}
+		for i, onsetTime in ipairs(onsets) do
+			local energyIndex = math.floor(onsetTime * sampRate / hopSize) + 1
+			local energy = rawEnergy[energyIndex]
+			onsetAlphas[i] = energy >= threshold and 1 or 0.2
 		end
+
+		local onsetMarkers = generateMarker(onsets, sampRate, hopSize, timeScale, 1, 1, 0, onsetAlphas)
+		showGraph(onsetMarkers)
+
+		local slope = buffers.slope:getAsTable(true)
+		local lastSlope = slope[1]
+		local count = 0
+		local turnStart = 0
+		local start = 0
+		local markers = {}
+		local alphas = {}
+		for i, slope in ipairs(slope) do
+			if slope < lastSlope then
+				if count == 0 then
+					turnStart = i
+					start = slope
+				end
+				count = count + 1
+			else
+				if count > 150 and start - slope > 0.16 then
+					print("Turn:", turnStart * hopSize / sampRate, count, start - slope)
+					table.insert(markers, turnStart * hopSize / sampRate)
+					table.insert(markers, i * hopSize / sampRate)
+					table.insert(alphas, 1)
+					table.insert(alphas, 0.2)
+				end
+				count = 0
+			end
+
+			lastSlope = slope
+		end
+		local markers = generateMarker(markers, sampRate, hopSize, timeScale, 1, 0, 1, alphas)
+		showGraph(markers)
 
 		song:play()
 
+		local bpm = buffers.bpm:getAsTable()
 		local fmt = "Playing %.1f\nFPS: %.1f\nError: %.3f\nBpm: %.3f"
 		local pos = song:getPosition()
 		local step = 0
@@ -128,7 +160,7 @@ return component(..., function()
 		return track
 	end
 
-	function generateMarker(data, sampRate, hopSize, timeScale, color, alphas)
+	function generateMarker(data, sampRate, hopSize, timeScale, r, g, b, as)
 		local format = MOAIVertexFormat.new()
 		format:declareCoord(1, MOAIVertexFormat.GL_FLOAT, 2)
 		format:declareColor(2, MOAIVertexFormat.GL_UNSIGNED_BYTE)
@@ -137,22 +169,12 @@ return component(..., function()
 		vbo:setFormat(format)
 
 		vbo:reserveVerts(#data * 2)
-		local threshold = Options.getDevOptions().analysis.notes.energy_threshold
 		for index, time in ipairs(data) do
 			local x = time * timeScale
-			local alphaIndex = math.floor(time * sampRate / hopSize) + 1
-			local energy = alphas[alphaIndex]
-			local alpha
-			if energy >= threshold then
-				alpha = 1
-			else
-				alpha = 0.2
-			end
-			local r, g, b = unpack(color)
 			vbo:writeFloat(x, 1)
-			vbo:writeColor32(r, g, b, alpha)
+			vbo:writeColor32(r, g, b, as[index])
 			vbo:writeFloat(x, 0)
-			vbo:writeColor32(r, g, b, alpha)
+			vbo:writeColor32(r, g, b, as[index])
 		end
 		vbo:bless()
 
