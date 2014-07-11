@@ -10,11 +10,14 @@ if [ ! -f $1 ]; then
 	exit 1
 fi
 
+read -s -p "Password: " PASSWORD
+
 curl \
 	-v \
-	--progress-bar \
 	--anyauth \
-	-u rubycell \
+	-u "rubycell:$PASSWORD" \
 	http://rubycell.com/download/upload.php \
 	--next http://rubycell.com/download/uploadAndroid.php \
-	-F uploaded=@$1
+	--progress-bar \
+	-u "rubycell:$PASSWORD" \
+	-F uploaded=@$1 > tee /dev/null
