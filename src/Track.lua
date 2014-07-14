@@ -20,23 +20,31 @@ return component(..., function()
 	end)
 
 	query("getTrackPosition", function(self, ent, time)
-		return unpack(self.trackPositionAt(time))
+		return self.trackPositionAt(time)
 	end)
 
 	query("getTrackOrientation", function(self, ent, time)
-		return unpack(self.trackOrientationAt(time))
+		return self.trackOrientationAt(time)
 	end)
 
 	query("getBaseOrientation", function(self, ent, time)
-		return unpack(self.baseOrientationAt(time))
+		return self.baseOrientationAt(time)
 	end)
 
 	function toFunctionOfTime(data, sampRate, hopSize)
 		local numPoints = #data
+		local temp = {}
 
 		return function(time)
-			local index = math.clamp(math.floor(time * sampRate / hopSize + 1.5), 0, numPoints)
-			return data[index]
+			local index = time * sampRate / hopSize + 1
+			local leftIndex = math.clamp(math.floor(index), 1, numPoints)
+			local rightIndex = math.clamp(math.ceil(index), 1, numPoints)
+			local left = data[leftIndex]
+			local right = data[rightIndex]
+			for i = 1, #left do
+				temp[i] = math.lerp(left[i], right[i], index - leftIndex)
+			end
+			return unpack(temp)
 		end
 	end
 

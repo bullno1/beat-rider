@@ -21,3 +21,4 @@ ride.max_bump_height     = 150
 ride.ship_height         = 15
 ride.max_elevation       = 15
 ride.max_speed_variation = 0.2
+ride.note_speed          = 0.5

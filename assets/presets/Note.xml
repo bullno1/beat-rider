@@ -2,9 +2,10 @@
 <preset>
 	<components>
 		<preset name="glider/Mesh" />
-		<component name="TrackBound" />
+		<component name="Note" />
 	</components>
 	<properties>
+		<string name="UpdatePhase">GameLogic</string>
 		<string name="DeckName">mesh:cube.dae</string>
 		<string name="PartitionName">Objects</string>
 		<string name="ShaderName">note</string>

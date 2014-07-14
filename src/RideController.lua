@@ -44,14 +44,16 @@ return component(..., function()
 	end
 
 	function createNotes(self, ent, notesData)
-		local trackWidth = Options.getDevOptions().ride.track_width
+		local opts = Options.getDevOptions().ride
+		local trackWidth = opts.track_width
 
 		for i, noteData in ipairs(notesData) do
 			local note = Entity.create("Note")
 			local time, column, score = unpack(noteData)
 
-			note:setTrackPosition(time)
+			note:setTargetTrackPosition(time)
 			note:setX((column - 2) * trackWidth / 3)
+			note:setSpeed(opts.note_speed)
 			
 			if score then
 				note:getProp():setColor(0.2, 0.8, 0.6)
