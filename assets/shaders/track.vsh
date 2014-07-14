@@ -1,15 +1,12 @@
-attribute vec4 position;
+attribute vec4 aPosition;
+attribute vec2 aUV;
 
-uniform mat4 transform;
-uniform float distanceToTexture;
+uniform mat4 uTransform;
 
-varying MEDP vec2 uv;
+varying MEDP vec2 vUV;
 
 void main()
 {
-	gl_Position = position * transform;
-
-	float u = (sign(position.x) + 1.0) * 0.5;
-	float v = position.z * distanceToTexture;
-	uv = vec2(u, v);
+	gl_Position = aPosition * uTransform;
+	vUV = aUV;
 }

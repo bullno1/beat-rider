@@ -1,9 +1,9 @@
 return {
 	uniforms = {
-		{"transform", "WORLD_VIEW_PROJ"},
-		{"distanceToTexture", "FLOAT", 1}
+		{"uTransform", "WORLD_VIEW_PROJ"}
 	},
 	attributes = {
-		"position"
+		"aPosition",
+		"aUV"
 	}
 }
