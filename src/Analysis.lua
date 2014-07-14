@@ -120,7 +120,7 @@ return module(function()
 
 			-- Column is random with forced clustering
 			local col
-			if onsetTime - lastTime <= clusterMaxLength and currentClusterSize < clusterMaxSize then
+			if onsetTime - lastTime < clusterMaxLength and currentClusterSize < clusterMaxSize then
 				col = lastCol
 				currentClusterSize = currentClusterSize + 1
 			else
