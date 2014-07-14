@@ -30,12 +30,15 @@ return component(..., function()
 		song:play()
 		local pos = song:getPosition()
 
+		local txt = Entity.getByName("txtProgress")
+		local template = "Play position: %.2f\nError: %.2f\nFPS:%.2f"
 		local step = 0
 		while true do
 			local truePosition = song:getPosition()
 			pos = pos + step
 			local err = truePosition - pos
-			pos = pos + 0.001 * err
+			pos = pos + 0.1 * err
+			txt:setText(template:format(pos, err, MOAISim.getPerformance()))
 
 			self.songPos = pos
 			self.songPosError = err
