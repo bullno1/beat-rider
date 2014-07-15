@@ -34,17 +34,23 @@ return component(..., function()
 	function toFunctionOfTime(data, sampRate, hopSize)
 		local numPoints = #data
 		local temp = {}
+		local floor = math.floor
+		local ceil = math.ceil
+		local lerp = math.lerp
+		local clamp = math.clamp
 
 		return function(time)
 			local index = time * sampRate / hopSize + 1
-			local leftIndex = math.clamp(math.floor(index), 1, numPoints)
-			local rightIndex = math.clamp(math.ceil(index), 1, numPoints)
+			local leftIndex = clamp(floor(index), 1, numPoints)
+			local rightIndex = clamp(ceil(index), 1, numPoints)
 			local left = data[leftIndex]
 			local right = data[rightIndex]
-			for i = 1, #left do
-				temp[i] = math.lerp(left[i], right[i], index - leftIndex)
-			end
-			return unpack(temp)
+			local blend = index - leftIndex
+			-- Unroll loop
+			local x = lerp(left[1], right[1], blend)
+			local y = lerp(left[2], right[2], blend)
+			local z = lerp(left[3], right[3], blend)
+			return x, y, z
 		end
 	end
 

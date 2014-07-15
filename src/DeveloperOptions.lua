@@ -15,10 +15,11 @@ analysis.notes.energy_threshold   = 0.07
 analysis.notes.cluster_max_length = 0.3
 analysis.notes.cluster_max_size   = 3
 
-ride.time_scale          = 1000
+ride.time_scale          = 2000
 ride.track_width         = 130
-ride.max_bump_height     = 150
+ride.max_bump_height     = 300
 ride.ship_height         = 15
 ride.max_elevation       = 15
-ride.max_speed_variation = 0.2
-ride.note_speed          = 0.5
+ride.note_speed          = 0.3
+ride.update_distance     = 3
+ride.max_speed_variation = 0.8
