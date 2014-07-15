@@ -129,7 +129,7 @@ return component(..., function()
 			trackTransform:forceUpdate()
 
 			local x, y, z = trackTransform:modelToWorld(0, height, 0)
-			local v = distance * distanceToTexCoord
+			local v = distance * distanceToTexCoord % 1.0
 			vbo:writeFloat(trackTransform:modelToWorld(-halfTrackWidth, height, 0))
 			vbo:writeFloat(0, v)
 			vbo:writeFloat(trackTransform:modelToWorld(halfTrackWidth, height, 0))
