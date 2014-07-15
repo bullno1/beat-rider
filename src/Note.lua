@@ -1,22 +1,21 @@
 local Entity = require "glider.Entity"
 
 return component(..., function()
-	depends "TrackBound"
-	depends "glider.Actor"
+	depends "glider.Renderable"
 
-	property "Speed"
-	property "TargetTrackPosition"
+	property("Colored",
+		function(self, ent)
+			return self.colored
+		end,
+		function(self, ent, val)
+			self.colored = val
 
-	msg("onCreate", function(self, ent)
-		self.rideController = Entity.getByName("RideController")
-		ent:setSpeed(0.3)
-		ent:setTargetTrackPosition(0)
-	end)
-
-	msg("update", function(self, ent)
-		local songPos = self.rideController:getSongPos()
-		local speed = ent:getSpeed()
-		local target = ent:getTargetTrackPosition()
-		ent:setTrackPosition(target - (target - songPos) * speed)
-	end)
+			local prop = ent:getProp()
+			if val then
+				prop:setColor(0.2, 0.8, 0.6)
+			else
+				prop:setColor(0.2, 0.2, 0.2)
+			end
+		end
+	)
 end)

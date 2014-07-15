@@ -3,6 +3,7 @@
 	<components>
 		<preset name="glider/Mesh" />
 		<component name="TrackBound" />
+		<component name="Note" />
 	</components>
 	<properties>
 		<string name="DeckName">mesh:cube.dae</string>
