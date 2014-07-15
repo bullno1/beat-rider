@@ -52,7 +52,7 @@ return component(..., function()
 			end
 
 			local movedNoteIndex = currentNoteIndex
-			while movedNoteIndex <= numNotes and notesData[movedNoteIndex][1] < pos + updateDistance do
+			while movedNoteIndex <= numNotes and notesData[movedNoteIndex][1] <= pos + updateDistance do
 				local note = notes[movedNoteIndex]
 				local target = notesData[movedNoteIndex][1]
 				setTrackPosition(note, target - (target - pos) * noteSpeed)
@@ -72,13 +72,16 @@ return component(..., function()
 	function createNotes(self, ent, notesData)
 		local opts = Options.getDevOptions().ride
 		local trackWidth = opts.track_width
+		local noteSpeed = opts.note_speed
+		local updateDistance = opts.update_distance
+		local posOffset = -updateDistance * noteSpeed
 		local notes = {}
 
 		for i, noteData in ipairs(notesData) do
 			local note = Entity.create("Note")
 			local time, column, score = unpack(noteData)
 
-			note:setTrackPosition(time)
+			note:setTrackPosition(time + posOffset)
 			note:setX((column - 2) * trackWidth / 3)
 			
 			if score then
