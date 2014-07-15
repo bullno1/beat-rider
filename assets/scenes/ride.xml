@@ -37,6 +37,7 @@
 				<number name="Y">50</number>
 				<number name="Z">120</number>
 				<number name="XRotation">-12</number>
+				<number name="TrackOffset">-0.02</number>
 				<string name="RotationMode">base</string>
 				<string name="UpdatePhase">GameLogic</string>
 			</properties>
