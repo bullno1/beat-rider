@@ -83,7 +83,7 @@ return component(..., function()
 
 			note:setTrackPosition(time + posOffset)
 			note:setX((column - 2) * trackWidth / 3)
-			
+
 			if score then
 				note:getProp():setColor(0.2, 0.8, 0.6)
 			else
