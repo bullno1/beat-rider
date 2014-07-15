@@ -128,7 +128,7 @@ public class MoaiActivity extends Activity {
 		mLocationManager = (LocationManager) getSystemService ( Context.LOCATION_SERVICE );
 
 		startConnectivityReceiver ();
-		enableAccelerometerEvents ( false );
+		enableAccelerometerEvents ( true );
 		enableLocationEvents ( false );
 
 		LinearLayoutIMETrap con = MoaiKeyboard.getContainer ();

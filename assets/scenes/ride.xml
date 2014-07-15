@@ -55,6 +55,7 @@
 				<string name="DeckName">mesh:spaceship.dae</string>
 				<string name="UpdatePhase">GameLogic</string>
 				<string name="RotationMode">base</string>
+				<number name="Y">5</number>
 			</properties>
 		</entity>
 
