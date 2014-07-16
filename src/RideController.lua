@@ -41,7 +41,6 @@ return component(..., function()
 		local numNotes = #notes
 		local setTrackPosition = notes[1].setTrackPosition
 
-		local track = Entity.getByName("Track")
 		local ship = Entity.getByName("Ship")
 		local trackWidth = Options.getDevOptions().ride.track_width
 		local shipMinX, _minY, _minZ, shipMaxX, _maxY, _maxZ = ship:getProp():getBounds()
@@ -90,7 +89,6 @@ return component(..., function()
 			end
 
 			local numActiveNotes = movedNoteIndex - currentNoteIndex
-
 			txt:setText(template:format(pos, err, MOAISim.getPerformance(), numActiveNotes, score))
 
 			self.songPos = pos

@@ -29,14 +29,18 @@ return function(name)
 	for index, uniformSpec in ipairs(uniforms) do
 		local name, uniformTypeName, uniformValue = unpack(uniformSpec)
 		local uniformType = assert(MOAIShader["UNIFORM_"..uniformTypeName], "Invalid uniform type '"..uniformTypeName.."'")
-		shader:declareUniform(index, name, uniformType)
+		if uniformType == MOAIShader.UNIFORM_SAMPLER then-- work around a bug in Moai
+			shader:declareUniformSampler(index, name, uniformValue)
+		else
+			shader:declareUniform(index, name, uniformType)
 
-		if uniformValue
-			and (uniformType == MOAIShader.UNIFORM_FLOAT
-				 or uniformType == MOAIShader.UNIFORM_INT
-				 or uniformType == MOAIShader.UNIFORM_SAMPLER) then
+			if uniformValue
+				and (uniformType == MOAIShader.UNIFORM_FLOAT
+					 or uniformType == MOAIShader.UNIFORM_INT
+					 or uniformType == MOAIShader.UNIFORM_SAMPLER) then
 
-			shader:setAttr(index, uniformValue)
+				shader:setAttr(index, uniformValue)
+			end
 		end
 	end
 

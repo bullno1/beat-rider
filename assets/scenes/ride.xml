@@ -13,6 +13,7 @@
 			</components>
 			<properties>
 				<string name="Name">Track</string>
+				<string name="UpdatePhase">GameLogic</string>
 				<string name="PartitionName">Objects</string>
 			</properties>
 		</entity>
@@ -23,7 +24,7 @@
 			</components>
 			<properties>
 				<string name="Name">RideController</string>
-				<string name="UpdatePhase">GameLogic</string>
+				<string name="UpdatePhase">Controller</string>
 			</properties>
 		</entity>
 

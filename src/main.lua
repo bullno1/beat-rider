@@ -3,6 +3,7 @@ local glider = require "glider"
 glider.start{
 	Director = {
 		updatePhases = {
+			"Controller",
 			"GameLogic",
 			"Visual"
 		},

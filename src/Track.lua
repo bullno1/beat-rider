@@ -1,19 +1,25 @@
 local Director = require "glider.Director"
+local Entity = require "glider.Entity"
 local Asset = require "glider.Asset"
 local Options = require "glider.Options"
 
 return component(..., function()
+	depends "glider.Actor"
+
 	msg("onCreate", function(self, ent)
 		local sceneData = Director.getSceneData()
 		local sampRate = sceneData.song:getInfo()
 		local trackData = sceneData.track
 		local slope = sceneData.slope
 		local turn = sceneData.turn
-		local trackMesh, trackPositions, trackRotations, baseRotations = createTrackMesh(trackData, slope, turn, sampRate)
+		local trackMesh, trackShader, distances, trackPositions, trackRotations, baseRotations =
+			createTrackMesh(trackData, slope, turn, sampRate)
 
 		ent:getProp():setDeck(trackMesh)
 
 		local hopSize = Options.getDevOptions().analysis.hop_size
+		self.shader = trackShader
+		self.distanceAt = toScalarFunctionOfTime(distances, sampRate, hopSize)
 		self.trackPositionAt = toFunctionOfTime(trackPositions, sampRate, hopSize)
 		self.trackOrientationAt = toFunctionOfTime(trackRotations, sampRate, hopSize)
 		self.baseOrientationAt = toFunctionOfTime(baseRotations, sampRate, hopSize)
@@ -29,6 +35,12 @@ return component(..., function()
 
 	query("getBaseOrientation", function(self, ent, time)
 		return self.baseOrientationAt(time)
+	end)
+
+	msg("update", function(self, ent)
+		local rideController = Entity.getByName("RideController")
+		local distance = self.distanceAt(rideController:getSongPos())
+		self.shader:setAttr(2, distance)
 	end)
 
 	function toFunctionOfTime(data, sampRate, hopSize)
@@ -51,6 +63,26 @@ return component(..., function()
 			local y = lerp(left[2], right[2], blend)
 			local z = lerp(left[3], right[3], blend)
 			return x, y, z
+		end
+	end
+
+	function toScalarFunctionOfTime(data, sampRate, hopSize)
+		local numPoints = #data
+		local temp = {}
+		local floor = math.floor
+		local ceil = math.ceil
+		local lerp = math.lerp
+		local clamp = math.clamp
+
+		return function(time)
+			local index = time * sampRate / hopSize + 1
+			local leftIndex = clamp(floor(index), 1, numPoints)
+			local rightIndex = clamp(ceil(index), 1, numPoints)
+			local left = data[leftIndex]
+			local right = data[rightIndex]
+			local blend = index - leftIndex
+
+			return lerp(left, right, blend)
 		end
 	end
 
@@ -103,6 +135,7 @@ return component(..., function()
 		local format = MOAIVertexFormat.new()
 		format:declareCoord(1, MOAIVertexFormat.GL_FLOAT, 3)
 		format:declareUV(2, MOAIVertexFormat.GL_FLOAT, 2)
+		format:declareAttribute(3, MOAIVertexFormat.GL_FLOAT, 1)
 
 		local vbo = MOAIVertexBuffer.new()
 		vbo:setFormat(format)
@@ -123,6 +156,7 @@ return component(..., function()
 		local rotations = {}
 		local baseRotations = {}
 		local distance = 0
+		local distances = {}
 		for index, y in ipairs(trackData) do
 			local height = maxBumpHeight * y
 			local slopeFactor = slope[index] * 2 - 1 -- From [0, 1] to [-1, 1]
@@ -136,12 +170,17 @@ return component(..., function()
 
 			local x, y, z = trackTransform:modelToWorld(0, height, 0)
 			local v = distance * distanceToTexCoord % 1.0
+			-- Left
 			vbo:writeFloat(trackTransform:modelToWorld(-halfTrackWidth, height, 0))
 			vbo:writeFloat(0, v)
+			vbo:writeFloat(-distance)
+			-- Right
 			vbo:writeFloat(trackTransform:modelToWorld(halfTrackWidth, height, 0))
 			vbo:writeFloat(1, v)
+			vbo:writeFloat(-distance)
 
 			distance = distance + step
+			table.insert(distances, -distance)
 
 			if index == 1 then
 				table.insert(rotations, { 0, 0, 0 })
@@ -164,9 +203,15 @@ return component(..., function()
 
 		-- Set shader and texture
 		local trackShader = Asset.get("shader", "track")
+		local multiTexture = MOAIMultiTexture.new()
+		multiTexture:reserve(2)
+		multiTexture:setTexture(1, trackTexture)
+		local moaiTexture = Asset.get("texture", "moai.png")
+		moaiTexture:setWrap(true)
+		multiTexture:setTexture(2, moaiTexture)
 		trackMesh:setShader(trackShader)
-		trackMesh:setTexture(trackTexture)
+		trackMesh:setTexture(multiTexture)
 
-		return trackMesh, positions, rotations, baseRotations
+		return trackMesh, trackShader, distances, positions, rotations, baseRotations
 	end
 end)
