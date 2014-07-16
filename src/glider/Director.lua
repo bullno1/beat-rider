@@ -9,12 +9,14 @@ return module(function()
 		"getSceneData",
 		"getUpdatePhase",
 		"getPartition",
+		"getFrameBuffer",
 		"pickFirstEntityAt"
 	}
 
 	local updatePhases = {}
-	local renderTable = {}
+	local renderTables = {}
 	local partitions = {}
+	local frameBuffers = {}
 	local cameras = setmetatable({}, {__mode='v'})
 
 	function init(config)
@@ -31,7 +33,6 @@ return module(function()
 		MOAICoroutine.new():run(changeSceneIfNeeded)
 
 		local frontBuffer = MOAIGfxDevice.getFrameBuffer()
-		frontBuffer:setRenderTable(renderTable)
 		frontBuffer:setClearDepth(true)
 
 		if config.firstScene then
@@ -57,6 +58,15 @@ return module(function()
 
 	function getPartition(name)
 		return partitions[name]
+	end
+
+	function getFrameBuffer(name)
+		for _, buffer in ipairs(frameBuffers) do
+			if buffer.name == name then
+				return buffer
+			end
+		end
+		return nil
 	end
 
 	function pickFirstEntityAt(x, y, predicate)
@@ -116,8 +126,14 @@ return module(function()
 					phase:clear()
 				end
 
-				table.clear(renderTable)
+				table.clear(renderTables)
 				table.clear(partitions)
+
+				-- Purge framebuffer textures
+				for _, buff in ipairs(frameBuffers) do
+					Asset.purge("rt-texture", buff.name)
+				end
+				table.clear(frameBuffers)
 
 				local scene = Asset.get("scene", nextScene)
 				initScene(scene)
@@ -138,6 +154,21 @@ return module(function()
 			partitions[partitionName] = partition
 		end
 
+		-- Create frame buffers
+		for buffIndex, buffSpec in pairs(sceneSpecs.frameBuffers) do
+			local frameBuffer = MOAIFrameBufferTexture.new()
+			local bufferName = buffSpec.name
+			frameBuffer:init(buffSpec.width, buffSpec.height, 78)
+			frameBuffer.name = bufferName
+			frameBuffers[buffIndex] = frameBuffer
+		end
+
+		if #frameBuffers > 0 then
+			MOAIRenderMgr.setBufferTable(frameBuffers)
+		else
+			MOAIRenderMgr.setBufferTable(nil)
+		end
+
 		-- Create entities
 		for entityIndex, entitySpec in ipairs(sceneSpecs.entities) do
 			local preset, properties = unpack(entitySpec)
@@ -152,33 +183,60 @@ return module(function()
 		local viewports = {}
 		for viewportName, viewportSpec in pairs(sceneSpecs.viewports) do
 			local viewport = MOAIViewport.new()
-			local fullWidthPx, fullHeightPx = Screen.getSize "px"
-			local viewScaleX, viewScaleY = Screen.getSize(viewportSpec.unit)
-			viewport:setSize(fullWidthPx * viewportSpec.width, fullHeightPx * viewportSpec.height)
-			viewport:setScale(viewScaleX * viewportSpec.xScale, viewScaleY * viewportSpec.yScale)
+			local viewWidth, viewHeight, viewScaleX, viewScaleY
+
+			if viewportSpec.mode == "relative" then
+				local fullWidthPx, fullHeightPx = Screen.getSize "px"
+				viewWidth, viewHeight = fullWidthPx * viewportSpec.width, fullHeightPx * viewportSpec.height
+				local width, height = Screen.getSize(viewportSpec.unit)
+				viewScaleX, viewScaleY = width * viewportSpec.xScale, height * viewportSpec.yScale
+			else
+				viewWidth, viewHeight = viewportSpec.width, viewportSpec.height
+				viewScaleX, viewScaleY = viewportSpec.xScale * viewWidth, viewportSpec.yScale * viewHeight
+			end
+
+			viewport:setSize(viewWidth, viewHeight)
+			viewport:setScale(viewScaleX, viewScaleY)
 			viewport:setOffset(viewportSpec.xOffset, viewportSpec.yOffset)
 			viewports[viewportName] = viewport
 		end
 
-		-- Create render table
-		for entryIndex, entrySpec in ipairs(sceneSpecs.renderTables.main) do
-			local entry
+		-- Create render tables
+		for tableName, tableSpec in pairs(sceneSpecs.renderTables) do
+			local renderTable = {}
+			for entryIndex, entrySpec in ipairs(tableSpec) do
+				local entry
 
-			if entrySpec.type == "layer" then
-				entry = MOAILayer.new()
-				entry:setPartition(assert(partitions[entrySpec.partition], "Partition '"..entrySpec.partition.."' does not exists"))
-				entry:setViewport(assert(viewports[entrySpec.viewport], "Viewport '"..entrySpec.viewport.."' does not exists"))
-				entry:setSortMode(entrySpec.sort)
+				if entrySpec.type == "layer" then
+					entry = MOAILayer.new()
+					entry:setPartition(assert(partitions[entrySpec.partition], "Partition '"..entrySpec.partition.."' does not exists"))
+					entry:setViewport(assert(viewports[entrySpec.viewport], "Viewport '"..entrySpec.viewport.."' does not exists"))
+					entry:setSortMode(entrySpec.sort)
 
-				local cameraName = entrySpec.camera
-				if cameraName then
-					local entity = assert(Entity.getByName(cameraName), "Entity '"..cameraName.."' does not exists")
-					assert(entity.getCamera, "Entity '"..cameraName.."' is not a camera")
-					entry:setCamera(entity:getCamera())
+					local cameraName = entrySpec.camera
+					if cameraName then
+						local entity = assert(Entity.getByName(cameraName), "Entity '"..cameraName.."' does not exists")
+						assert(entity.getCamera, "Entity '"..cameraName.."' is not a camera")
+						entry:setCamera(entity:getCamera())
+					end
 				end
-			end
 
-			renderTable[entryIndex] = entry
+				renderTable[entryIndex] = entry
+			end
+			renderTables[tableName] = renderTable
+		end
+
+		MOAIGfxDevice.getFrameBuffer():setRenderTable(renderTables.main)
+
+		-- Init frame buffers
+		for buffIndex, buffSpec in pairs(sceneSpecs.frameBuffers) do
+			local renderTable = assert(
+				renderTables[buffSpec.renderTable],
+				"Buffer "..tostring(buffSpec.name).."("..buffIndex..") specify an invalid render table: '"..buffSpec.renderTable.."'"
+			)
+			frameBuffers[buffIndex]:setRenderTable(renderTable)
+			-- TODO: use setting from xml
+			frameBuffers[buffIndex]:setClearColor(0, 0, 0, 0)
 		end
 	end
 end)

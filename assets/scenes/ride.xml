@@ -3,9 +3,15 @@
 	<partitions>
 		<partition name="GUI" />
 		<partition name="Objects" />
+		<partition name="Grid" />
 	</partitions>
 
 	<entities>
+		<preset name="glider/Sprite">
+			<string name="SpriteName">gem</string>
+			<string name="PartitionName">Grid</string>
+		</preset>
+
 		<entity>
 			<components>
 				<preset name="glider/Mesh" />
@@ -74,6 +80,7 @@
 	<viewports>
 		<viewport name="Default" />
 		<viewport name="GUI" y-scale="-1" x-offset="-1" y-offset="1" />
+		<viewport name="Grid" width="256" height="256" x-scale="0.5" y-scale="0.5" y-offset="-1" mode="absolute" />
 	</viewports>
 
 	<render-tables>
@@ -81,8 +88,12 @@
 			<layer partition="Objects" viewport="Default" camera="RideCamera" />
 			<layer partition="GUI" viewport="GUI" />
 		</render-table>
+		<render-table name="grid">
+			<layer partition="Grid" viewport="Grid" />
+		</render-table>
 	</render-tables>
 
 	<frame-buffers>
+		<frame-buffer name="grid" width="256" height="256" render-table="grid" />
 	</frame-buffers>
 </scene>

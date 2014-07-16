@@ -11,7 +11,7 @@ return module(function()
 	function parse(sceneXml, context)
 		local context = context or ""
 
-		local partitions, entities, viewports, renderTables
+		local partitions, entities, viewports, renderTables, frameBuffers
 
 		for _, elem in childElementsOf(sceneXml) do
 			if elem.name == "partitions" then
@@ -22,6 +22,8 @@ return module(function()
 				viewports = parseViewports(elem, context.."/viewports")
 			elseif elem.name == "render-tables" then
 				renderTables = parseRenderTables(elem, context.."/renderTables")
+			elseif elem.name == "frame-buffers" then
+				frameBuffers = parseFrameBuffers(elem, context.."/frameBuffers")
 			end
 		end
 
@@ -34,7 +36,8 @@ return module(function()
 			partitions = partitions,
 			entities = entities,
 			viewports = viewports,
-			renderTables = renderTables
+			renderTables = renderTables,
+			frameBuffers = frameBuffers
 		}
 	end
 
@@ -121,6 +124,7 @@ return module(function()
 			yScale = tonumber(attrs["y-scale"]) or 1,
 			xOffset = tonumber(attrs["x-offset"]) or 0,
 			yOffset = tonumber(attrs["y-offset"]) or 0,
+			mode = attrs["mode"] or "relative",
 			unit = attrs.unit or "dp"
 		}
 	end
@@ -162,6 +166,28 @@ return module(function()
 			viewport = attrs.viewport,
 			camera = attrs.camera,
 			sort = MOAILayer["SORT_"..sort:upper()]
+		}
+	end
+
+	function parseFrameBuffers(frameBuffersXml, context)
+		local frameBuffers = {}
+
+		for elemIndex, elem in childElementsOf(frameBuffersXml) do
+			if elem.name == "frame-buffer" then
+				table.insert(frameBuffers, parseFrameBuffer(elem, context.."["..elemIndex.."]"))
+			end
+		end
+
+		return frameBuffers
+	end
+
+	function parseFrameBuffer(bufferXml, context)
+		local attrs = bufferXml.attr
+		return {
+			name = attrs.name,
+			width = assert(tonumber(attrs.width), "Invalid width\nContext:"..context),
+			height = assert(tonumber(attrs.height), "Invalid height\nContext:"..context),
+			renderTable = assert(attrs["render-table"], "Invalid render-table\nContext:"..context)
 		}
 	end
 end)

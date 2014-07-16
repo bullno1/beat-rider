@@ -22,4 +22,11 @@ function m.load(assetType, assetName)
 	return asset
 end
 
+-- Remove an asset from cache.
+function m.purge(assetType, assetName)
+	local fqn = assetType..":"..assetName
+	cache[fqn] = nil
+	print("Purged "..fqn)
+end
+
 return m
