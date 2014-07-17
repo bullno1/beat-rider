@@ -7,10 +7,15 @@
 	</partitions>
 
 	<entities>
-		<preset name="glider/Sprite">
-			<string name="SpriteName">gem</string>
-			<string name="PartitionName">Grid</string>
-		</preset>
+		<entity>
+			<components>
+				<component name="ColorGrid" />
+			</components>
+			<properties>
+				<list name="Rect">0, 0, 255, 255</list>
+				<string name="PartitionName">Grid</string>
+			</properties>
+		</entity>
 
 		<entity>
 			<components>
@@ -80,7 +85,7 @@
 	<viewports>
 		<viewport name="Default" />
 		<viewport name="GUI" y-scale="-1" x-offset="-1" y-offset="1" />
-		<viewport name="Grid" width="256" height="256" x-scale="0.5" y-scale="0.5" y-offset="-1" mode="absolute" />
+		<viewport name="Grid" width="256" height="256" x-offset="-1" y-offset="-1" mode="absolute" />
 	</viewports>
 
 	<render-tables>
