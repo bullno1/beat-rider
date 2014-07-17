@@ -1,4 +1,5 @@
 local Entity = require "glider.Entity"
+local Options = require "glider.Options"
 
 return component(..., function()
 	depends "glider.Renderable"
@@ -16,6 +17,17 @@ return component(..., function()
 			else
 				prop:setColor(0.2, 0.2, 0.2)
 			end
+		end
+	)
+
+	property("Lane",
+		function(self, ent)
+			return self.lane
+		end,
+		function(self, ent, val)
+			local trackWidth = Options.getDevOptions().ride.track_width
+			self.lane = val
+			ent:setX((val - 2) * trackWidth / 3)
 		end
 	)
 end)

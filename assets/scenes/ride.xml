@@ -12,6 +12,7 @@
 				<component name="ColorGrid" />
 			</components>
 			<properties>
+				<string name="Name">Grid</string>
 				<list name="Rect">20, 0, 492, 502</list>
 				<number name="NumRows">7</number>
 				<number name="HorizontalGap">35</number>

@@ -42,7 +42,7 @@ return component(..., function()
 		local setTrackPosition = notes[1].setTrackPosition
 
 		local ship = Entity.getByName("Ship")
-		local trackWidth = Options.getDevOptions().ride.track_width
+		local grid = Entity.getByName("Grid")
 		local shipMinX, _minY, _minZ, shipMaxX, _maxY, _maxZ = ship:getProp():getBounds()
 		local noteMinX, _minY, _minZ, noteMaxX, _maxY, _maxZ = notes[1]:getProp():getBounds()
 		local score = 0
@@ -68,12 +68,15 @@ return component(..., function()
 				local leftEdgeIn = noteLeft <= shipLeft and shipLeft <= noteRight
 				local rightEdgeIn = noteLeft <= shipRight and shipRight <= noteRight
 				if leftEdgeIn or rightEdgeIn then
-					Entity.destroy(note)
 					if note:getColored() then
 						score = score + 1
 					else
 						score = math.max(0, score - 1)
 					end
+
+					local noteLane = note:getLane()
+					grid:addNote(noteLane, note:getColored())
+					Entity.destroy(note)
 				end
 
 				currentNoteIndex = currentNoteIndex + 1
@@ -99,7 +102,6 @@ return component(..., function()
 
 	function createNotes(self, ent, notesData)
 		local opts = Options.getDevOptions().ride
-		local trackWidth = opts.track_width
 		local noteSpeed = opts.note_speed
 		local updateDistance = opts.update_distance
 		local posOffset = -updateDistance * noteSpeed
@@ -107,10 +109,10 @@ return component(..., function()
 
 		for i, noteData in ipairs(notesData) do
 			local note = Entity.create("Note")
-			local time, column, colored = unpack(noteData)
+			local time, lane, colored = unpack(noteData)
 
 			note:setTrackPosition(time + posOffset)
-			note:setX((column - 2) * trackWidth / 3)
+			note:setLane(lane)
 			note:setColored(colored)
 
 			notes[i] = note
