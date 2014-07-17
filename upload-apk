@@ -20,4 +20,4 @@ curl \
 	--next http://rubycell.com/download/uploadAndroid.php \
 	--progress-bar \
 	-u "rubycell:$PASSWORD" \
-	-F uploaded=@$1 > tee /dev/null
+	-F uploaded=@$1 | tee /dev/null
