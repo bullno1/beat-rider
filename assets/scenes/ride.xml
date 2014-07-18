@@ -19,6 +19,7 @@
 				<number name="VerticalGap">25</number>
 				<number name="LineWidth">8</number>
 				<string name="PartitionName">Grid</string>
+				<string name="UpdatePhase">GameLogic</string>
 			</properties>
 		</entity>
 
@@ -46,22 +47,6 @@
 
 		<entity>
 			<components>
-				<preset name="glider/Camera" />
-				<component name="BeatRider" />
-			</components>
-			<properties>
-				<string name="Name">RideCamera</string>
-				<number name="Y">60</number>
-				<number name="Z">120</number>
-				<number name="XRotation">-14</number>
-				<number name="TrackOffset">-0.02</number>
-				<string name="RotationMode">base</string>
-				<string name="UpdatePhase">GameLogic</string>
-			</properties>
-		</entity>
-
-		<entity>
-			<components>
 				<preset name="glider/Mesh" />
 				<component name="Ship" />
 				<component name="BeatRider" />
@@ -73,6 +58,23 @@
 				<string name="UpdatePhase">GameLogic</string>
 				<string name="RotationMode">base</string>
 				<number name="Y">5</number>
+			</properties>
+		</entity>
+
+		<entity>
+			<components>
+				<preset name="glider/Camera" />
+				<component name="BeatRider" />
+				<component name="RideCamera" />
+			</components>
+			<properties>
+				<string name="Name">MainCamera</string>
+				<number name="Y">60</number>
+				<number name="Z">120</number>
+				<number name="XRotation">-14</number>
+				<number name="TrackOffset">-0.02</number>
+				<string name="RotationMode">base</string>
+				<string name="UpdatePhase">GameLogic</string>
 			</properties>
 		</entity>
 
@@ -95,7 +97,7 @@
 
 	<render-tables>
 		<render-table name="main">
-			<layer partition="Objects" viewport="Default" camera="RideCamera" />
+			<layer partition="Objects" viewport="Default" camera="MainCamera" />
 			<layer partition="GUI" viewport="GUI" />
 		</render-table>
 		<render-table name="grid">
