@@ -165,6 +165,7 @@ return module(function()
 			partition = attrs.partition,
 			viewport = attrs.viewport,
 			camera = attrs.camera,
+			name = attrs.name,
 			sort = MOAILayer["SORT_"..sort:upper()]
 		}
 	end

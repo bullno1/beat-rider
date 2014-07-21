@@ -10,7 +10,8 @@ return module(function()
 		"getUpdatePhase",
 		"getPartition",
 		"getFrameBuffer",
-		"pickFirstEntityAt"
+		"pickFirstEntityAt",
+		"getRenderTableEntry"
 	}
 
 	local updatePhases = {}
@@ -71,6 +72,16 @@ return module(function()
 
 	function pickFirstEntityAt(x, y, predicate)
 		return pickEntityInRenderTable(renderTable, x, y, predicate)
+	end
+
+	function getRenderTableEntry(renderTableName, entryName)
+		local renderTable = assert(renderTables[renderTableName], "Render table '"..renderTableName.."' does not exist")
+		-- TODO: handle nested table
+		for _, entry in ipairs(renderTable) do
+			if entry.name == entryName then
+				return entry
+			end
+		end
 	end
 
 	-- Private
@@ -212,6 +223,7 @@ return module(function()
 					entry:setPartition(assert(partitions[entrySpec.partition], "Partition '"..entrySpec.partition.."' does not exists"))
 					entry:setViewport(assert(viewports[entrySpec.viewport], "Viewport '"..entrySpec.viewport.."' does not exists"))
 					entry:setSortMode(entrySpec.sort)
+					entry.name = entrySpec.name
 
 					local cameraName = entrySpec.camera
 					if cameraName then

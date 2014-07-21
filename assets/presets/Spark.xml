@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<preset>
+	<components>
+		<preset name="glider/Sprite" />
+		<component name="Spark" />
+	</components>
+	<properties>
+		<string name="SpriteName">spark</string>
+		<string name="PartitionName">Effects</string>
+		<string name="UpdatePhase">GameLogic</string>
+	</properties>
+</preset>

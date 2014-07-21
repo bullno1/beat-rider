@@ -3,6 +3,7 @@
 	<partitions>
 		<partition name="GUI" />
 		<partition name="Objects" />
+		<partition name="Effects" />
 		<partition name="Grid" />
 	</partitions>
 
@@ -70,7 +71,7 @@
 			<properties>
 				<string name="Name">MainCamera</string>
 				<number name="Y">60</number>
-				<number name="Z">110</number>
+				<number name="Z">105</number>
 				<number name="XRotation">-10</number>
 				<number name="TrackOffset">-0.02</number>
 				<string name="RotationMode">base</string>
@@ -91,13 +92,15 @@
 
 	<viewports>
 		<viewport name="Default" unit="px" />
+		<viewport name="Effects" />
 		<viewport name="GUI" y-scale="-1" x-offset="-1" y-offset="1" />
 		<viewport name="Grid" width="512" height="512" x-offset="-1" y-offset="-1" mode="absolute" />
 	</viewports>
 
 	<render-tables>
 		<render-table name="main">
-			<layer partition="Objects" viewport="Default" camera="MainCamera" />
+			<layer name="Objects" partition="Objects" viewport="Default" camera="MainCamera" />
+			<layer name="Effects" partition="Effects" viewport="Effects" />
 			<layer partition="GUI" viewport="GUI" />
 		</render-table>
 		<render-table name="grid">

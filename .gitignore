@@ -1,4 +1,5 @@
 .build
 .ycm_extra_conf.pyc
+/assets/atlases
 /assets/textures/gen
 /.sandbox

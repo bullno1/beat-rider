@@ -45,6 +45,8 @@ return component(..., function()
 		local grid = Entity.getByName("Grid")
 		local shipMinX, _minY, _minZ, shipMaxX, _maxY, _maxZ = ship:getProp():getBounds()
 		local noteMinX, _minY, _minZ, noteMaxX, _maxY, _maxZ = notes[1]:getProp():getBounds()
+		local objectLayer = Director.getRenderTableEntry("main", "Objects")
+		local fxLayer = Director.getRenderTableEntry("main", "Effects")
 		local score = 0
 
 		while true do
@@ -76,7 +78,14 @@ return component(..., function()
 
 					local noteLane = note:getLane()
 					grid:addNote(noteLane, note:getColored())
+
 					Entity.destroy(note)
+				else
+					local noteScreenX, noteScreenY = objectLayer:worldToWnd(note:getProp():getWorldLoc())
+					local noteWorldX, noteWorldY = fxLayer:wndToWorld(noteScreenX, noteScreenY)
+					local effect = Entity.create("Spark")
+					effect:setX(noteWorldX)
+					effect:setY(noteWorldY)
 				end
 
 				currentNoteIndex = currentNoteIndex + 1
