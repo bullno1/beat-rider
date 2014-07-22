@@ -9,12 +9,20 @@ return component(..., function()
 
 	msg("onCreate", function(self, ent)
 		self.columns = {}
+		self.countDown = 1
 		for columnIndex = 1, 3 do
 			self.columns[columnIndex] = {}
 		end
 	end)
 
 	msg("update", function(self, ent)
+		if self.countDown > 0 then
+			self.countDown = math.max(0, self.countDown - 1/60/2)
+
+			if self.countDown == 0 then
+				flushGrid(self, ent)
+			end
+		end
 	end)
 
 	msg("onDraw", function(self, ent)
@@ -42,7 +50,11 @@ return component(..., function()
 				if tile then
 					if tile.colored then
 						if tile.matched then
-							MOAIGfxDevice.setPenColor(0.8, 0.8, 0.6)
+							local countDown = self.countDown
+							local r = math.lerp(1, 0.2, countDown)
+							local g = math.lerp(1, 0.8, countDown)
+							local b = math.lerp(1, 0.6, countDown)
+							MOAIGfxDevice.setPenColor(r, g, b)
 						else
 							MOAIGfxDevice.setPenColor(0.2, 0.8, 0.6)
 						end
@@ -50,7 +62,6 @@ return component(..., function()
 						MOAIGfxDevice.setPenColor(0.2, 0.2, 0.2)
 					end
 
-					--local posScale = tileState.posScale
 					MOAIDraw.fillRect(xMin, yMin, xMax, yMax)
 				end
 
@@ -73,13 +84,21 @@ return component(..., function()
 			flushGrid(self, ent)
 		end
 
-		table.insert(column, tile)
-		findMatches(self, ent)
+		if #column >= numRows then -- overfill
+			table.clear(column)
+		else
+			table.insert(column, tile)
+			local matchFound = findMatches(self, ent)
+			if matchFound and colored then
+				self.countDown = 1
+			end
+		end
 	end)
 
 	function findMatches(self, ent)
 		local visited = {}
 		local columns = self.columns
+		local matchFound = false
 
 		forEachTile(self, ent, clearMatch)
 
@@ -90,11 +109,14 @@ return component(..., function()
 					for _, tile in ipairs(cluster) do
 						tile.matched = true
 					end
+					matchFound = true
 				end
 
 				visited[tile] = true
 			end
 		end)
+
+		return matchFound
 	end
 
 	function clearMatch(tile)
@@ -107,7 +129,6 @@ return component(..., function()
 		if isColored(centerTile) and not visited[centerTile] then
 			cluster = cluster or {}
 			table.insert(cluster, centerTile)
-			print("cluster:", #cluster)
 			visited[centerTile] = true
 
 			local leftTile = getTile(columns, rowIndex, columnIndex - 1)
