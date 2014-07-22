@@ -26,8 +26,6 @@ return component(..., function()
 	end)
 
 	msg("onDraw", function(self, ent)
-		MOAIGfxDevice.setPenWidth(ent:getLineWidth())
-
 		local xMin, yMin, xMax, yMax = unpack(ent:getRect())
 		local totalWidth = xMax - xMin
 		local hGap = ent:getHorizontalGap()
@@ -37,6 +35,7 @@ return component(..., function()
 		local vGap = ent:getVerticalGap()
 		local tileHeight = (totalHeight - vGap * (numRows - 1)) / numRows
 		local columns = self.columns
+		local countDown = self.countDown
 
 		for col = 0, 2 do
 			for row = 0, numRows - 1 do
@@ -50,21 +49,16 @@ return component(..., function()
 				if tile then
 					if tile.colored then
 						if tile.matched then
-							local countDown = self.countDown
-							local r = math.lerp(1, 0.2, countDown)
-							local g = math.lerp(1, 0.8, countDown)
-							local b = math.lerp(1, 0.6, countDown)
-							MOAIGfxDevice.setPenColor(r, g, b)
+							drawMatchedColoredTile(xMin, yMin, xMax, yMax, countDown)
 						else
-							MOAIGfxDevice.setPenColor(0.2, 0.8, 0.6)
+							drawNormalColoredTile(xMin, yMin, xMax, yMax)
 						end
 					else
-						MOAIGfxDevice.setPenColor(0.2, 0.2, 0.2)
+						drawGrayTile(xMin, yMin, xMax, yMax)
 					end
-
-					MOAIDraw.fillRect(xMin, yMin, xMax, yMax)
 				end
 
+				MOAIGfxDevice.setPenWidth(ent:getLineWidth())
 				MOAIGfxDevice.setPenColor(1, 1, 1)
 				MOAIDraw.drawRect(xMin, yMin, xMax, yMax)
 			end
@@ -75,6 +69,12 @@ return component(..., function()
 		local tile = {
 			colored = colored
 		}
+
+		if colored then
+			tile.matched = false
+		else
+			tile.cracked = false
+		end
 
 		local column = self.columns[lane]
 		local columnHeight = #column
@@ -94,6 +94,31 @@ return component(..., function()
 			end
 		end
 	end)
+
+	-- Private
+
+	function drawNormalColoredTile(xMin, yMin, xMax, yMax)
+		MOAIGfxDevice.setPenColor(0.2, 0.8, 0.6)
+		MOAIDraw.fillRect(xMin, yMin, xMax, yMax)
+	end
+
+	function drawMatchedColoredTile(xMin, yMin, xMax, yMax, countDown)
+		drawNormalColoredTile(xMin, yMin, xMax, yMax)
+
+		local centerX = (xMin + xMax) / 2
+		local centerY = (yMin + yMax) / 2
+		local width = (xMax - xMin) * countDown
+		local height = (yMax - yMin) * countDown
+
+		MOAIGfxDevice.setPenWidth(4)
+		MOAIGfxDevice.setPenColor(1, 1, 1)
+		MOAIDraw.drawRect(centerX - width / 2, centerY - height / 2, centerX + width / 2, centerY + height / 2)
+	end
+
+	function drawGrayTile(xMin, yMin, xMax, yMax)
+		MOAIGfxDevice.setPenColor(0.2, 0.2, 0.2)
+		MOAIDraw.fillRect(xMin, yMin, xMax, yMax)
+	end
 
 	function findMatches(self, ent)
 		local visited = {}
