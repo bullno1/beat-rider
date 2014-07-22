@@ -15,13 +15,6 @@ return component(..., function()
 	end)
 
 	msg("update", function(self, ent)
-		for columnIndex, column in ipairs(self.columns) do
-			for rowIndex, tile in ipairs(column) do
-				if tile then
-					tile.posScale = math.min(tile.posScale + 0.06, 1)
-				end
-			end
-		end
 	end)
 
 	msg("onDraw", function(self, ent)
@@ -45,16 +38,20 @@ return component(..., function()
 					xMin + col * (tileWidth + hGap) + tileWidth,
 					yMin + row * (tileHeight + vGap) + tileHeight
 
-				local tileState = columns[col + 1][row + 1]
-				if tileState then
-					if tileState.colored then
-						MOAIGfxDevice.setPenColor(0.2, 0.8, 0.6)
+				local tile = columns[col + 1][row + 1]
+				if tile then
+					if tile.colored then
+						if tile.matched then
+							MOAIGfxDevice.setPenColor(0.8, 0.8, 0.6)
+						else
+							MOAIGfxDevice.setPenColor(0.2, 0.8, 0.6)
+						end
 					else
 						MOAIGfxDevice.setPenColor(0.2, 0.2, 0.2)
 					end
 
-					local posScale = tileState.posScale
-					MOAIDraw.fillRect(xMin, yMin * posScale, xMax, yMin * posScale + tileHeight )
+					--local posScale = tileState.posScale
+					MOAIDraw.fillRect(xMin, yMin, xMax, yMax)
 				end
 
 				MOAIGfxDevice.setPenColor(1, 1, 1)
@@ -64,14 +61,108 @@ return component(..., function()
 	end)
 
 	msg("addNote", function(self, ent, lane, colored)
-		local column = self.columns[lane]
-		if #column == ent:getNumRows() then
-			table.clear(column)
-		end
-		local tileData = {
-			colored = colored,
-			posScale = -0.2
+		local tile = {
+			colored = colored
 		}
-		table.insert(column, tileData)
+
+		local column = self.columns[lane]
+		local columnHeight = #column
+		local numRows = ent:getNumRows()
+
+		if columnHeight >= numRows then
+			flushGrid(self, ent)
+		end
+
+		table.insert(column, tile)
+		findMatches(self, ent)
 	end)
+
+	function findMatches(self, ent)
+		local visited = {}
+		local columns = self.columns
+
+		forEachTile(self, ent, clearMatch)
+
+		forEachTile(self, ent, function(tile, column, rowIndex, columnIndex)
+			if tile and not visited[tile] then
+				local cluster = findAdjacentColoredTiles(columns, tile, rowIndex, columnIndex, nil, visited)
+				if cluster and #cluster >= 3 then
+					for _, tile in ipairs(cluster) do
+						tile.matched = true
+					end
+				end
+
+				visited[tile] = true
+			end
+		end)
+	end
+
+	function clearMatch(tile)
+		if tile then
+			tile.matched = false
+		end
+	end
+
+	function findAdjacentColoredTiles(columns, centerTile, rowIndex, columnIndex, cluster, visited)
+		if isColored(centerTile) and not visited[centerTile] then
+			cluster = cluster or {}
+			table.insert(cluster, centerTile)
+			print("cluster:", #cluster)
+			visited[centerTile] = true
+
+			local leftTile = getTile(columns, rowIndex, columnIndex - 1)
+			local rightTile = getTile(columns, rowIndex, columnIndex + 1)
+			local topTile = getTile(columns, rowIndex + 1, columnIndex)
+			local bottomTile = getTile(columns, rowIndex - 1, columnIndex)
+
+			findAdjacentColoredTiles(columns, leftTile, rowIndex, columnIndex - 1, cluster, visited)
+			findAdjacentColoredTiles(columns, rightTile, rowIndex, columnIndex + 1, cluster, visited)
+			findAdjacentColoredTiles(columns, topTile, rowIndex + 1, columnIndex, cluster, visited)
+			findAdjacentColoredTiles(columns, bottomTile, rowIndex - 1, columnIndex, cluster, visited)
+		end
+
+		return cluster
+	end
+
+	function getTile(columns, row, col)
+		local column = columns[col]
+		if column then return column[row] end
+	end
+
+	function isColored(tile)
+		return tile and tile.colored
+	end
+
+	function flushGrid(self, ent)
+		forEachTile(self, ent, removeIfMatched)
+		forEachTile(self, ent, fillGap)
+	end
+
+	function removeIfMatched(tile, column, rowIndex, columnIndex)
+		if tile and tile.matched then
+			column[rowIndex] = nil
+		end
+	end
+
+	function fillGap(tile, column, rowIndex, columnIndex, numRows)
+		if tile == nil then
+			-- Look for a non-empty row above
+			for nextRowIndex = rowIndex + 1, numRows do
+				if column[nextRowIndex] ~= nil then
+					column[rowIndex] = column[nextRowIndex]
+					column[nextRowIndex] = nil
+					break
+				end
+			end
+		end
+	end
+
+	function forEachTile(self, ent, func)
+		local numRows = ent:getNumRows()
+		for columnIndex, column in ipairs(self.columns) do
+			for rowIndex = 1, numRows do
+				func(column[rowIndex], column, rowIndex, columnIndex, numRows)
+			end
+		end
+	end
 end)
