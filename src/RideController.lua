@@ -87,6 +87,11 @@ return component(..., function()
 				local effect = Entity.create("Spark")
 				effect:setX(noteWorldX)
 				effect:setY(noteWorldY)
+				if note:getColored() then
+					effect:getProp():setColor(0.2, 0.8, 0.6)
+				else
+					effect:getProp():setColor(0.2, 0.2, 0.2)
+				end
 
 				currentNoteIndex = currentNoteIndex + 1
 			end
