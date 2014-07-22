@@ -87,6 +87,9 @@ return component(..., function()
 	end
 
 	function createTrackMesh(trackData, slope, turn, sampRate)
+		local devOpts = Options.getDevOptions()
+		local opts = devOpts.ride
+
 		-- Identify descending parts of the slope to make turns
 		local angles = {}
 		local numPoints = #trackData
@@ -100,6 +103,10 @@ return component(..., function()
 		local dropStartTime = 0
 		local dropStartSlope = 0
 		local turnDir = 1
+		local minDropDuration = opts.turn.min_drop_duration
+		local minDropSlope = opts.turn.min_drop_slope
+		local turningSpeed = opts.turn.speed
+
 		for i, slope in ipairs(slope) do
 			if slope < lastSlope then -- is this a drop?
 				if dropDuration == 0 then
@@ -108,11 +115,11 @@ return component(..., function()
 				end
 				dropDuration = dropDuration + 1
 			else
-				if dropDuration > 100 and dropStartSlope - slope > 0.02 then
+				if dropDuration > minDropDuration and dropStartSlope - slope > minDropSlope then
 					-- Make the track turn for the duration of the drop
 					for j = dropStartTime, i do
 						angles[j] = currentAngle
-						currentAngle = currentAngle + 0.2 * turnDir
+						currentAngle = currentAngle + turningSpeed * turnDir
 					end
 					for j = i + 1, numPoints do
 						angles[j] = currentAngle
@@ -140,8 +147,6 @@ return component(..., function()
 		local vbo = MOAIVertexBuffer.new()
 		vbo:setFormat(format)
 
-		local devOpts = Options.getDevOptions()
-		local opts = devOpts.ride
 		local timeScale = opts.time_scale
 		local halfTrackWidth = opts.track_width / 2
 		local maxBumpHeight = opts.max_bump_height

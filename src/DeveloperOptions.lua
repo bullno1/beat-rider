@@ -13,14 +13,18 @@ analysis.slope.trend_smoothing_factor = 0.01
 analysis.slope.window_radius          = 10
 
 analysis.notes.energy_threshold   = 0.1
-analysis.notes.cluster_max_length = 0.2
+analysis.notes.cluster_max_length = 0.1
 analysis.notes.cluster_max_size   = 3
 
 ride.time_scale          = 2000
 ride.track_width         = 130
 ride.max_bump_height     = 300
 ride.ship_height         = 15
-ride.max_elevation       = 15
-ride.note_speed          = 0.5
+ride.max_elevation       = 40
+ride.note_speed          = 0.4
 ride.update_distance     = 3
 ride.max_speed_variation = 0.8
+
+ride.turn.min_drop_duration = 60
+ride.turn.min_drop_slope    = 0.02
+ride.turn.speed             = 0.2
