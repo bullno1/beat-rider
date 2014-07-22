@@ -80,13 +80,13 @@ return component(..., function()
 					grid:addNote(noteLane, note:getColored())
 
 					Entity.destroy(note)
-				else
-					local noteScreenX, noteScreenY = objectLayer:worldToWnd(note:getProp():getWorldLoc())
-					local noteWorldX, noteWorldY = fxLayer:wndToWorld(noteScreenX, noteScreenY)
-					local effect = Entity.create("Spark")
-					effect:setX(noteWorldX)
-					effect:setY(noteWorldY)
 				end
+
+				local noteScreenX, noteScreenY = objectLayer:worldToWnd(note:getProp():getWorldLoc())
+				local noteWorldX, noteWorldY = fxLayer:wndToWorld(noteScreenX, noteScreenY)
+				local effect = Entity.create("Spark")
+				effect:setX(noteWorldX)
+				effect:setY(noteWorldY)
 
 				currentNoteIndex = currentNoteIndex + 1
 			end
