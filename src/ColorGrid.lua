@@ -54,7 +54,11 @@ return component(..., function()
 							drawNormalColoredTile(xMin, yMin, xMax, yMax)
 						end
 					else
-						drawGrayTile(xMin, yMin, xMax, yMax)
+						if tile.cracked then
+							drawCrackedGrayTile(xMin, yMin, xMax, yMax)
+						else
+							drawNormalGrayTile(xMin, yMin, xMax, yMax)
+						end
 					end
 				end
 
@@ -115,8 +119,13 @@ return component(..., function()
 		MOAIDraw.drawRect(centerX - width / 2, centerY - height / 2, centerX + width / 2, centerY + height / 2)
 	end
 
-	function drawGrayTile(xMin, yMin, xMax, yMax)
+	function drawNormalGrayTile(xMin, yMin, xMax, yMax)
 		MOAIGfxDevice.setPenColor(0.2, 0.2, 0.2)
+		MOAIDraw.fillRect(xMin, yMin, xMax, yMax)
+	end
+
+	function drawCrackedGrayTile(xMin, yMin, xMax, yMax)
+		MOAIGfxDevice.setPenColor(0.5, 0.5, 0.5)
 		MOAIDraw.fillRect(xMin, yMin, xMax, yMax)
 	end
 
@@ -127,7 +136,7 @@ return component(..., function()
 
 		forEachTile(self, ent, clearMatch)
 
-		forEachTile(self, ent, function(tile, column, rowIndex, columnIndex)
+		forEachTile(self, ent, function(tile, rowIndex, columnIndex)
 			if tile and not visited[tile] then
 				local cluster = findAdjacentColoredTiles(columns, tile, rowIndex, columnIndex, nil, visited)
 				if cluster and #cluster >= 3 then
@@ -180,34 +189,67 @@ return component(..., function()
 	end
 
 	function flushGrid(self, ent)
-		forEachTile(self, ent, removeIfMatched)
-		forEachTile(self, ent, fillGap)
-	end
+		local columns = self.columns
+		local numRows = ent:getNumRows()
 
-	function removeIfMatched(tile, column, rowIndex, columnIndex)
-		if tile and tile.matched then
-			column[rowIndex] = nil
-		end
-	end
+		-- Clear all matched tiles
+		local crackList
+		forEachTile(self, ent, function(tile, rowIndex, columnIndex)
+			if tile and tile.matched then
+				columns[columnIndex][rowIndex] = nil
 
-	function fillGap(tile, column, rowIndex, columnIndex, numRows)
-		if tile == nil then
-			-- Look for a non-empty row above
-			for nextRowIndex = rowIndex + 1, numRows do
-				if column[nextRowIndex] ~= nil then
-					column[rowIndex] = column[nextRowIndex]
-					column[nextRowIndex] = nil
-					break
+				-- Crack adjacent gray tiles
+				crackList = tryCrack(columns, rowIndex + 1, columnIndex, crackList)
+				crackList = tryCrack(columns, rowIndex - 1, columnIndex, crackList)
+				crackList = tryCrack(columns, rowIndex, columnIndex + 1, crackList)
+				crackList = tryCrack(columns, rowIndex, columnIndex - 1, crackList)
+			end
+		end)
+
+		if crackList then
+			for tile, coord in pairs(crackList) do
+				if tile.cracked then--destroy it
+					local row, column = unpack(coord)
+					columns[column][row] = nil
+				else--crack it
+					tile.cracked = true
 				end
 			end
 		end
+
+		-- Fill the gaps
+		forEachTile(self, ent, function(tile, rowIndex, columnIndex)
+			if tile == nil then
+				local column = columns[columnIndex]
+				-- Look for a non-empty row above
+				for nextRowIndex = rowIndex + 1, numRows do
+					if column[nextRowIndex] ~= nil then
+						column[rowIndex] = column[nextRowIndex]
+						column[nextRowIndex] = nil
+						break
+					end
+				end
+			end
+		end)
+	end
+
+	function tryCrack(columns, row, column, crackList)
+		local tile = getTile(columns, row, column)
+		if tile and not tile.colored then
+			-- Accumulate them in a list so that a tile is not cracked more than once
+			-- in one flush
+			crackList = crackList or {}
+			crackList[tile] = { row, column }
+		end
+
+		return crackList
 	end
 
 	function forEachTile(self, ent, func)
 		local numRows = ent:getNumRows()
 		for columnIndex, column in ipairs(self.columns) do
 			for rowIndex = 1, numRows do
-				func(column[rowIndex], column, rowIndex, columnIndex, numRows)
+				func(column[rowIndex], rowIndex, columnIndex)
 			end
 		end
 	end
