@@ -1,3 +1,5 @@
+local Entity = require "glider.Entity"
+
 return component(..., function()
 	depends "glider.CustomDraw"
 	depends "glider.Actor"
@@ -116,6 +118,7 @@ return component(..., function()
 
 		if #column >= numRows then -- overfill
 			table.clear(column)
+			Entity.getByName("MainCamera"):shake()
 		else
 			table.insert(column, tile)
 			local matchFound = findMatches(self, ent)
