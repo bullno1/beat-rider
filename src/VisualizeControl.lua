@@ -208,7 +208,7 @@ return component(..., function()
 
 		local onsetDetector = OnsetDetector.new()
 		onsetDetector:setMethod(opts.onset_detection.method)
-		onsetDetector:setChunkSize(hopSize)
+		onsetDetector:setChunkSize(opts.onset_detection.hop_size)
 		onsetDetector:setSampleRate(sampRate)
 		source:connect(onsetDetector)
 

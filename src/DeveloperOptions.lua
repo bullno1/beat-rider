@@ -1,6 +1,7 @@
 analysis.hop_size = 512
 
-analysis.onset_detection.method = "hfc"
+analysis.onset_detection.method   = "hfc"
+analysis.onset_detection.hop_size = 128
 
 analysis.track.data_smoothing_factor  = 0.03
 analysis.track.trend_smoothing_factor = 0.03
