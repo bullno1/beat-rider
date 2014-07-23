@@ -23,6 +23,7 @@ return component(..., function()
 	end)
 
 	msg("update", function(self, ent)
+		-- Count down to flushing grids
 		if self.countDown > 0 then
 			self.countDown = math.max(0, self.countDown - 1/60/2)
 
@@ -31,6 +32,7 @@ return component(..., function()
 			end
 		end
 
+		-- Update a pulsing value for effects
 		local pulseSpeed = self.pulseSpeed
 		local pulse = self.pulse + pulseSpeed
 		if pulse >= 1 then
@@ -42,6 +44,9 @@ return component(..., function()
 		end
 
 		self.pulse = pulse
+
+		-- Move notes to their correct visual position
+		forEachTile(self, ent, moveTile)
 	end)
 
 	msg("onDraw", function(self, ent)
@@ -70,6 +75,12 @@ return component(..., function()
 				-- Draw tile
 				local tile = column[row + 1]
 				if tile then
+					-- Draw tile using visual rather than logical position
+					local visualRow = tile.visualRow
+
+					local yMin, yMax =
+						yMin + math.floor(visualRow - 1 - row) * (tileHeight + vGap),
+						yMin + math.floor(visualRow - 1 - row) * (tileHeight + vGap) + tileHeight
 					if tile.colored then
 						if tile.matched then
 							drawMatchedColoredTile(xMin, yMin, xMax, yMax, countDown)
@@ -99,7 +110,8 @@ return component(..., function()
 
 	msg("addNote", function(self, ent, lane, colored)
 		local tile = {
-			colored = colored
+			colored = colored,
+			visualRow = 0
 		}
 
 		if colored then
@@ -129,6 +141,18 @@ return component(..., function()
 	end)
 
 	-- Private
+
+	function moveTile(tile, targetRow, targetCol)
+		if not tile then return end
+
+		local visualRow = tile.visualRow
+		local diff = targetRow - visualRow
+		local sign = math.sign(diff)
+		local speed = sign > 0 and 0.3 or 0.05
+		local magnitude = math.min(math.abs(diff), speed)
+		visualRow = visualRow + sign * magnitude
+		tile.visualRow = visualRow
+	end
 
 	function drawNormalColoredTile(xMin, yMin, xMax, yMax)
 		MOAIGfxDevice.setPenColor(0.2, 0.8, 0.6)
