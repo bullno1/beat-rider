@@ -19,71 +19,50 @@ return component(..., function()
 
 		local hopSize = Options.getDevOptions().analysis.hop_size
 		self.shader = trackShader
-		self.distanceAt = toScalarFunctionOfTime(distances, sampRate, hopSize)
-		self.trackPositionAt = toFunctionOfTime(trackPositions, sampRate, hopSize)
-		self.trackOrientationAt = toFunctionOfTime(trackRotations, sampRate, hopSize)
-		self.baseOrientationAt = toFunctionOfTime(baseRotations, sampRate, hopSize)
+		self.distanceCurve = toCurve(distances, sampRate, hopSize)
+		self.positionCurve = toVectorCurve(trackPositions, sampRate, hopSize)
+		self.orientationCurve = toVectorCurve(trackRotations, sampRate, hopSize)
+		self.baseOrientationCurve = toVectorCurve(baseRotations, sampRate, hopSize)
 	end)
 
 	query("getTrackPosition", function(self, ent, time)
-		return self.trackPositionAt(time)
+		return self.positionCurve:getValueAtTime(time)
 	end)
 
 	query("getTrackOrientation", function(self, ent, time)
-		return self.trackOrientationAt(time)
+		return self.orientationCurve:getValueAtTime(time)
 	end)
 
 	query("getBaseOrientation", function(self, ent, time)
-		return self.baseOrientationAt(time)
+		return self.baseOrientationCurve:getValueAtTime(time)
 	end)
 
 	msg("update", function(self, ent)
 		local rideController = Entity.getByName("RideController")
-		local distance = self.distanceAt(rideController:getSongPos())
+		local distance = self.distanceCurve:getValueAtTime(rideController:getSongPos())
 		self.shader:setAttr(2, distance - 20)
 	end)
 
-	function toFunctionOfTime(data, sampRate, hopSize)
-		local numPoints = #data
-		local temp = {}
-		local floor = math.floor
-		local ceil = math.ceil
-		local lerp = math.lerp
-		local clamp = math.clamp
+	function toVectorCurve(data, sampRate, hopSize)
+		local curve = MOAIAnimCurveVec.new()
+		curve:reserveKeys(#data)
 
-		return function(time)
-			local index = time * sampRate / hopSize + 1
-			local leftIndex = clamp(floor(index), 1, numPoints)
-			local rightIndex = clamp(ceil(index), 1, numPoints)
-			local left = data[leftIndex]
-			local right = data[rightIndex]
-			local blend = index - leftIndex
-			-- Unroll loop
-			local x = lerp(left[1], right[1], blend)
-			local y = lerp(left[2], right[2], blend)
-			local z = lerp(left[3], right[3], blend)
-			return x, y, z
+		for index, point in ipairs(data) do
+			curve:setKey(index, index * hopSize / sampRate, point[1], point[2], point[3], MOAIEaseType.LINEAR)
 		end
+
+		return curve
 	end
 
-	function toScalarFunctionOfTime(data, sampRate, hopSize)
-		local numPoints = #data
-		local temp = {}
-		local floor = math.floor
-		local ceil = math.ceil
-		local lerp = math.lerp
-		local clamp = math.clamp
+	function toCurve(data, sampRate, hopSize)
+		local curve = MOAIAnimCurve.new()
+		curve:reserveKeys(#data)
 
-		return function(time)
-			local index = time * sampRate / hopSize + 1
-			local leftIndex = clamp(floor(index), 1, numPoints)
-			local rightIndex = clamp(ceil(index), 1, numPoints)
-			local left = data[leftIndex]
-			local right = data[rightIndex]
-			local blend = index - leftIndex
-
-			return lerp(left, right, blend)
+		for index, point in ipairs(data) do
+			curve:setKey(index, index * hopSize / sampRate, point, MOAIEaseType.LINEAR)
 		end
+
+		return curve
 	end
 
 	function createTrackMesh(trackData, slope, turn, sampRate)
