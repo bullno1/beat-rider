@@ -1,46 +1,41 @@
 local Entity = require "glider.Entity"
+local Animation = require "glider.Animation"
 
 return component(..., function()
 	depends "glider.Renderable"
 	depends "glider.Actor"
 
-	local rotationCurve
-	local alphaCurve
-	local scaleCurve
+	local ROT_CURVE = Animation.createCurve{
+		{ 0.0,   0, MOAIEaseType.LINEAR },
+		{ 0.2, -10, MOAIEaseType.LINEAR }
+	}
+
+	local ALPHA_CURVE = Animation.createCurve{
+		{ 0.0, 0.9, MOAIEaseType.LINEAR },
+		{ 0.1, 1.0, MOAIEaseType.LINEAR },
+		{ 0.2, 0.5, MOAIEaseType.LINEAR }
+	}
+
+	local SCL_CURVE = Animation.createCurve{
+		{ 0.0, 1.7, MOAIEaseType.LINEAR },
+		{ 0.2, 0.1, MOAIEaseType.LINEAR }
+	}
+
+	local ANIM_SPECS = {
+		{ ROT_CURVE,   MOAITransform.ATTR_Z_ROT, true },
+		{ SCL_CURVE,   MOAITransform.ATTR_X_SCL },
+		{ SCL_CURVE,   MOAITransform.ATTR_Y_SCL },
+		{ ALPHA_CURVE, MOAIColor.ATTR_A_COL     },
+	}
 
 	msg("onCreate", function(self, ent)
 		ent:spawnCoroutine(spark, self, ent)
 	end)
 
 	function spark(self, ent)
-		if rotationCurve == nil then
-			rotationCurve = MOAIAnimCurve.new()
-			rotationCurve:reserveKeys(2)
-			rotationCurve:setKey(1, 0, 0, MOAIEaseType.LINEAR)
-			rotationCurve:setKey(2, 0.2, -10, MOAIEaseType.LINEAR)
-
-			alphaCurve = MOAIAnimCurve.new()
-			alphaCurve:reserveKeys(3)
-			alphaCurve:setKey(1, 0, 0.9, MOAIEaseType.LINEAR)
-			alphaCurve:setKey(2, 0.1, 1, MOAIEaseType.LINEAR)
-			alphaCurve:setKey(3, 0.2, 0.5, MOAIEaseType.LINEAR)
-
-			scaleCurve = MOAIAnimCurve.new()
-			scaleCurve:reserveKeys(3)
-			scaleCurve:setKey(1, 0, 0.1, MOAIEaseType.LINEAR)
-			scaleCurve:setKey(2, 0.1, 2, MOAIEaseType.LINEAR)
-			scaleCurve:setKey(3, 0.2, 0.1, MOAIEaseType.LINEAR)
-		end
-
 		ent:setZRotation(math.random(0, 360))
 
-		local anim = MOAIAnim.new()
-		anim:reserveLinks(4)
-		anim:setLink(1, rotationCurve, ent:getProp(), MOAITransform.ATTR_Z_ROT, true)
-		anim:setLink(2, scaleCurve, ent:getProp(), MOAITransform.ATTR_X_SCL)
-		anim:setLink(3, scaleCurve, ent:getProp(), MOAITransform.ATTR_Y_SCL)
-		anim:setLink(4, alphaCurve, ent:getProp(), MOAIColor.ATTR_A_COL)
-
+		local anim = Animation.createAnim(ent:getProp(), ANIM_SPECS)
 		ent:performAction(anim)
 		MOAICoroutine.blockOnAction(anim)
 		Entity.destroy(ent)
