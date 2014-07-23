@@ -4,3 +4,5 @@
 /assets/textures/gen
 /assets/sfx/*.mp3
 /.sandbox
+/temp
+*.apk
