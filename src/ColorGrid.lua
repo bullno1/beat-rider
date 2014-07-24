@@ -16,7 +16,7 @@ return component(..., function()
 		self.pulse = 0 -- a value which goes back and forth in [0, 1], used for effects
 		self.pulseSpeed = 0.08 -- pulsing speed
 
-		self.numMovingTiles = 0
+		self.movingTiles = {}
 
 		self.countDown = 0 -- count down value until matched tiles are flushed from the grid
 		self.hasMatch = {} -- arrays of boolean which indicates whether a column has any matched tiles
@@ -29,7 +29,7 @@ return component(..., function()
 
 	msg("update", function(self, ent)
 		-- Count down to flushing grids
-		if self.countDown > 0 and self.numMovingTiles == 0 then
+		if self.countDown > 0 and next(self.movingTiles) == nil then
 			self.countDown = math.max(0, self.countDown - 1/60/COUNT_DOWN_TIME)
 
 			if self.countDown == 0 then
@@ -124,14 +124,14 @@ return component(..., function()
 
 	msg("onTileAnimationStart", function(self, ent, tile)
 		if ColorTile.isColored(tile) then
-			self.numMovingTiles = self.numMovingTiles + 1
+			self.movingTiles[tile] = true
 			self.countDown = 1
 		end
 	end)
 
 	msg("onTileAnimationEnd", function(self, ent, tile)
 		if ColorTile.isColored(tile) then
-			self.numMovingTiles = self.numMovingTiles - 1
+			self.movingTiles[tile] = nil
 		end
 	end)
 
