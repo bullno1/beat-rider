@@ -121,12 +121,16 @@ return component(..., function()
 	end)
 
 	msg("onTileAnimationStart", function(self, ent, tile)
-		self.numMovingTiles = self.numMovingTiles + 1
-		self.countDown = 1
+		if ColorTile.isColored(tile) then
+			self.numMovingTiles = self.numMovingTiles + 1
+			self.countDown = 1
+		end
 	end)
 
 	msg("onTileAnimationEnd", function(self, ent, tile)
-		self.numMovingTiles = self.numMovingTiles - 1
+		if ColorTile.isColored(tile) then
+			self.numMovingTiles = self.numMovingTiles - 1
+		end
 	end)
 
 	-- Private
