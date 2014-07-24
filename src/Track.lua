@@ -20,9 +20,14 @@ return component(..., function()
 		local hopSize = Options.getDevOptions().analysis.hop_size
 		self.shader = trackShader
 		self.distanceCurve = toCurve(distances, sampRate, hopSize)
+		self.timeCurve = toInvCurve(distances, sampRate, hopSize)
 		self.positionCurve = toVectorCurve(trackPositions, sampRate, hopSize)
 		self.orientationCurve = toVectorCurve(trackRotations, sampRate, hopSize)
 		self.baseOrientationCurve = toVectorCurve(baseRotations, sampRate, hopSize)
+	end)
+
+	query("getDistance", function(self, ent, time)
+		return self.distanceCurve:getValueAtTime(time)
 	end)
 
 	query("getTrackPosition", function(self, ent, time)
@@ -37,10 +42,14 @@ return component(..., function()
 		return self.baseOrientationCurve:getValueAtTime(time)
 	end)
 
+	query("distanceToTime", function(self, ent, distance)
+		return self.timeCurve:getValueAtTime(distance)
+	end)
+
 	msg("update", function(self, ent)
 		local rideController = Entity.getByName("RideController")
-		local distance = self.distanceCurve:getValueAtTime(rideController:getSongPos())
-		self.shader:setAttr(2, distance - 20)
+		local distance = ent:getDistance(rideController:getSongPos())
+		self.shader:setAttr(2, distance)
 	end)
 
 	function toVectorCurve(data, sampRate, hopSize)
@@ -60,6 +69,17 @@ return component(..., function()
 
 		for index, point in ipairs(data) do
 			curve:setKey(index, index * hopSize / sampRate, point, MOAIEaseType.LINEAR)
+		end
+
+		return curve
+	end
+
+	function toInvCurve(data, sampRate, hopSize)
+		local curve = MOAIAnimCurve.new()
+		curve:reserveKeys(#data)
+
+		for index, point in ipairs(data) do
+			curve:setKey(index, point, index * hopSize / sampRate, MOAIEaseType.LINEAR)
 		end
 
 		return curve
@@ -149,6 +169,7 @@ return component(..., function()
 			trackTransform:setRot(xAngle, angles[index], 0)
 
 			local step = trackStep + slopeFactor * maxSpeedVariation * trackStep
+			distance = distance + step
 			trackTransform:setLoc(trackTransform:modelToWorld(0, 0, step))
 			trackTransform:forceUpdate()
 
@@ -163,7 +184,6 @@ return component(..., function()
 			vbo:writeFloat(1, v)
 			vbo:writeFloat(-distance)
 
-			distance = distance + step
 			table.insert(distances, -distance)
 
 			if index == 1 then

@@ -1,4 +1,5 @@
 local Entity = require "glider.Entity"
+local ColorTile = require "ColorTile"
 
 return component(..., function()
 	depends "glider.CustomDraw"
@@ -12,6 +13,8 @@ return component(..., function()
 	msg("onCreate", function(self, ent)
 		self.pulse = 0 -- a value which goes back and forth in [0, 1], used for effects
 		self.pulseSpeed = 0.08 -- pulsing speed
+
+		self.numMovingTiles = 0
 
 		self.countDown = 0 -- count down value until matched tiles are flushed from the grid
 		self.hasMatch = {} -- arrays of boolean which indicates whether a column has any matched tiles
@@ -44,9 +47,6 @@ return component(..., function()
 		end
 
 		self.pulse = pulse
-
-		-- Move notes to their correct visual position
-		forEachTile(self, ent, moveTile)
 	end)
 
 	msg("onDraw", function(self, ent)
@@ -76,24 +76,13 @@ return component(..., function()
 				local tile = column[row + 1]
 				if tile then
 					-- Draw tile using visual rather than logical position
-					local visualRow = tile.visualRow
+					local visualRow = ColorTile.getVisualRow(tile)
 
 					local yMin, yMax =
-						yMin + math.floor(visualRow - 1 - row) * (tileHeight + vGap),
-						yMin + math.floor(visualRow - 1 - row) * (tileHeight + vGap) + tileHeight
-					if tile.colored then
-						if tile.matched then
-							drawMatchedColoredTile(xMin, yMin, xMax, yMax, countDown)
-						else
-							drawNormalColoredTile(xMin, yMin, xMax, yMax)
-						end
-					else
-						if tile.cracked then
-							drawCrackedGrayTile(xMin, yMin, xMax, yMax)
-						else
-							drawNormalGrayTile(xMin, yMin, xMax, yMax)
-						end
-					end
+						yMin + (visualRow - 1 - row) * (tileHeight + vGap),
+						yMin + (visualRow - 1 - row) * (tileHeight + vGap) + tileHeight
+
+					ColorTile.draw(tile, xMin, yMin, xMax, yMax, countDown)
 				end
 
 				-- Draw border
@@ -109,21 +98,11 @@ return component(..., function()
 	end)
 
 	msg("addNote", function(self, ent, lane, colored)
-		local tile = {
-			colored = colored,
-			visualRow = 0
-		}
-
-		if colored then
-			tile.matched = false
-		else
-			tile.cracked = false
-		end
-
 		local column = self.columns[lane]
 		local columnHeight = #column
 		local numRows = ent:getNumRows()
 
+		-- Try to clear column if it's filled
 		if columnHeight >= numRows then
 			flushGrid(self, ent)
 		end
@@ -132,55 +111,27 @@ return component(..., function()
 			table.clear(column)
 			Entity.getByName("MainCamera"):shake()
 		else
+			local tile = ColorTile.create(lane, colored, ent:getNumRows(), #column + 1, ent)
 			table.insert(column, tile)
-			local matchFound = findMatches(self, ent)
-			if matchFound and colored then
-				self.countDown = 1
-			end
+			findMatches(self, ent)
+		end
+	end)
+
+	msg("onTileAnimationStart", function(self, ent, tile)
+		self.numMovingTiles = self.numMovingTiles + 1
+		self.countDown = 1
+	end)
+
+	msg("onTileAnimationEnd", function(self, ent, tile)
+		self.numMovingTiles = self.numMovingTiles - 1
+
+		if self.numMovingTiles == 0 then
+			findMatches(self, ent)
+			self.countDown = 1
 		end
 	end)
 
 	-- Private
-
-	function moveTile(tile, targetRow, targetCol)
-		if not tile then return end
-
-		local visualRow = tile.visualRow
-		local diff = targetRow - visualRow
-		local sign = math.sign(diff)
-		local speed = sign > 0 and 0.3 or 0.05
-		local magnitude = math.min(math.abs(diff), speed)
-		visualRow = visualRow + sign * magnitude
-		tile.visualRow = visualRow
-	end
-
-	function drawNormalColoredTile(xMin, yMin, xMax, yMax)
-		MOAIGfxDevice.setPenColor(0.2, 0.8, 0.6)
-		MOAIDraw.fillRect(xMin, yMin, xMax, yMax)
-	end
-
-	function drawMatchedColoredTile(xMin, yMin, xMax, yMax, countDown)
-		drawNormalColoredTile(xMin, yMin, xMax, yMax)
-
-		local centerX = (xMin + xMax) / 2
-		local centerY = (yMin + yMax) / 2
-		local width = (xMax - xMin) * countDown
-		local height = (yMax - yMin) * countDown
-
-		MOAIGfxDevice.setPenWidth(4)
-		MOAIGfxDevice.setPenColor(1, 1, 1)
-		MOAIDraw.drawRect(centerX - width / 2, centerY - height / 2, centerX + width / 2, centerY + height / 2)
-	end
-
-	function drawNormalGrayTile(xMin, yMin, xMax, yMax)
-		MOAIGfxDevice.setPenColor(0.2, 0.2, 0.2)
-		MOAIDraw.fillRect(xMin, yMin, xMax, yMax)
-	end
-
-	function drawCrackedGrayTile(xMin, yMin, xMax, yMax)
-		MOAIGfxDevice.setPenColor(0.5, 0.5, 0.5)
-		MOAIDraw.fillRect(xMin, yMin, xMax, yMax)
-	end
 
 	function findMatches(self, ent)
 		local visited = {}
@@ -200,7 +151,7 @@ return component(..., function()
 				local cluster = findAdjacentColoredTiles(columns, tile, rowIndex, columnIndex, nil, visited)
 				if cluster and #cluster >= 3 then
 					for _, tile in ipairs(cluster) do
-						tile.matched = true
+						ColorTile.setMatched(tile, true)
 						local column = cluster[tile][2]
 						hasMatch[column] = true
 					end
@@ -216,12 +167,12 @@ return component(..., function()
 
 	function clearMatch(tile)
 		if tile then
-			tile.matched = false
+			ColorTile.setMatched(tile, false)
 		end
 	end
 
 	function findAdjacentColoredTiles(columns, centerTile, rowIndex, columnIndex, cluster, visited)
-		if isColored(centerTile) and not visited[centerTile] then
+		if ColorTile.isColored(centerTile) and not visited[centerTile] then
 			cluster = cluster or {}
 			cluster[centerTile] = { rowIndex, columnIndex }
 			table.insert(cluster, centerTile)
@@ -246,10 +197,6 @@ return component(..., function()
 		if column then return column[row] end
 	end
 
-	function isColored(tile)
-		return tile and tile.colored
-	end
-
 	function flushGrid(self, ent)
 		local columns = self.columns
 		local numRows = ent:getNumRows()
@@ -257,7 +204,8 @@ return component(..., function()
 		-- Clear all matched tiles
 		local crackList
 		forEachTile(self, ent, function(tile, rowIndex, columnIndex)
-			if tile and tile.matched then
+			if ColorTile.isMatched(tile) then
+				ColorTile.destroy(columns[columnIndex][rowIndex])
 				columns[columnIndex][rowIndex] = nil
 
 				-- Crack adjacent gray tiles
@@ -270,11 +218,11 @@ return component(..., function()
 
 		if crackList then
 			for tile, coord in pairs(crackList) do
-				if tile.cracked then--destroy it
+				if ColorTile.isCracked(tile) then--destroy it
 					local row, column = unpack(coord)
 					columns[column][row] = nil
 				else--crack it
-					tile.cracked = true
+					ColorTile.crack(tile)
 				end
 			end
 		end
@@ -286,7 +234,9 @@ return component(..., function()
 				-- Look for a non-empty row above
 				for nextRowIndex = rowIndex + 1, numRows do
 					if column[nextRowIndex] ~= nil then
-						column[rowIndex] = column[nextRowIndex]
+						local tile = column[nextRowIndex]
+						column[rowIndex] = tile
+						ColorTile.setRow(tile, rowIndex)
 						column[nextRowIndex] = nil
 						break
 					end
@@ -297,7 +247,7 @@ return component(..., function()
 
 	function tryCrack(columns, row, column, crackList)
 		local tile = getTile(columns, row, column)
-		if tile and not tile.colored then
+		if tile and not ColorTile.isColored(tile) then
 			-- Accumulate them in a list so that a tile is not cracked more than once
 			-- in one flush
 			crackList = crackList or {}
@@ -307,11 +257,11 @@ return component(..., function()
 		return crackList
 	end
 
-	function forEachTile(self, ent, func)
+	function forEachTile(self, ent, func, ...)
 		local numRows = ent:getNumRows()
 		for columnIndex, column in ipairs(self.columns) do
 			for rowIndex = 1, numRows do
-				func(column[rowIndex], rowIndex, columnIndex)
+				func(column[rowIndex], rowIndex, columnIndex, ...)
 			end
 		end
 	end

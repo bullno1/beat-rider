@@ -14,11 +14,11 @@
 			</components>
 			<properties>
 				<string name="Name">Grid</string>
-				<list name="Rect">20, 0, 492, 502</list>
+				<list name="Rect">10, 0, 246, 246</list>
 				<number name="NumRows">7</number>
-				<number name="HorizontalGap">35</number>
-				<number name="VerticalGap">25</number>
-				<number name="LineWidth">8</number>
+				<number name="HorizontalGap">18</number>
+				<number name="VerticalGap">8</number>
+				<number name="LineWidth">4</number>
 				<string name="PartitionName">Grid</string>
 				<string name="UpdatePhase">GameLogic</string>
 			</properties>
@@ -94,7 +94,7 @@
 		<viewport name="Default" unit="px" />
 		<viewport name="Effects" />
 		<viewport name="GUI" y-scale="-1" x-offset="-1" y-offset="1" />
-		<viewport name="Grid" width="512" height="512" x-offset="-1" y-offset="-1" mode="absolute" />
+		<viewport name="Grid" width="256" height="256" x-offset="-1" y-offset="-1" mode="absolute" />
 	</viewports>
 
 	<render-tables>
@@ -109,6 +109,6 @@
 	</render-tables>
 
 	<frame-buffers>
-		<frame-buffer name="grid" width="512" height="512" render-table="grid" />
+		<frame-buffer name="grid" width="256" height="256" render-table="grid" />
 	</frame-buffers>
 </scene>
