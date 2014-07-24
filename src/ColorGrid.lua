@@ -10,6 +10,8 @@ return component(..., function()
 	property "VerticalGap"
 	property "LineWidth"
 
+	local COUNT_DOWN_TIME = 0.8
+
 	msg("onCreate", function(self, ent)
 		self.pulse = 0 -- a value which goes back and forth in [0, 1], used for effects
 		self.pulseSpeed = 0.08 -- pulsing speed
@@ -28,7 +30,7 @@ return component(..., function()
 	msg("update", function(self, ent)
 		-- Count down to flushing grids
 		if self.countDown > 0 and self.numMovingTiles == 0 then
-			self.countDown = math.max(0, self.countDown - 1/60/2)
+			self.countDown = math.max(0, self.countDown - 1/60/COUNT_DOWN_TIME)
 
 			if self.countDown == 0 then
 				flushGrid(self, ent)
