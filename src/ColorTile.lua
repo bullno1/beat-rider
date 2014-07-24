@@ -16,8 +16,8 @@ return module(function()
 		"isCracked"
 	}
 
-	local MOVEMENT_TIME = 0.3
-	local SHRINK_TIME = 0.3
+	local MOVEMENT_TIME = 0.2
+	local SHRINK_TIME = 0.2
 
 	local DISTANCE_CURVE = Animation.createCurve{
 		{ 0.0,   0, MOAIEaseType.SOFT_EASE_IN },
@@ -141,13 +141,13 @@ return module(function()
 
 			tile.visualRow = visualRow
 
-			if diff == 0 and tile.moving then
-				tile.moving = false
+			local moving = diff ~= 0
+			if not moving and tile.moving then
 				ent:onTileAnimationEnd(tile)
-			elseif diff ~= 0 and not tile.moving then
-				tile.moving = true
+			elseif moving and not tile.moving then
 				ent:onTileAnimationStart(tile)
 			end
+			tile.moving = moving
 
 			yield()
 		end
