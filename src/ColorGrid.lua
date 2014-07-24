@@ -108,7 +108,10 @@ return component(..., function()
 		end
 
 		if #column >= numRows then -- overfill
-			table.clear(column)
+			for row = 1, numRows do
+				destroyTile(self, ent, row, lane)
+			end
+
 			Entity.getByName("MainCamera"):shake()
 		else
 			local tile = ColorTile.create(lane, colored, ent:getNumRows(), #column + 1, ent)
@@ -197,6 +200,22 @@ return component(..., function()
 		if column then return column[row] end
 	end
 
+	function destroyTile(self, ent, row, col)
+		local column = self.columns[col]
+		if column then
+			local tile = column[row]
+			if tile then
+				local moving = ColorTile.isMoving(tile)
+				if moving then
+					ent:onTileAnimationEnd(tile)
+				end
+
+				ColorTile.destroy(tile)
+				column[row] = nil
+			end
+		end
+	end
+
 	function flushGrid(self, ent)
 		local columns = self.columns
 		local numRows = ent:getNumRows()
@@ -205,8 +224,7 @@ return component(..., function()
 		local crackList
 		forEachTile(self, ent, function(tile, rowIndex, columnIndex)
 			if ColorTile.isMatched(tile) then
-				ColorTile.destroy(columns[columnIndex][rowIndex])
-				columns[columnIndex][rowIndex] = nil
+				destroyTile(self, ent, rowIndex, columnIndex)
 
 				-- Crack adjacent gray tiles
 				crackList = tryCrack(columns, rowIndex + 1, columnIndex, crackList)
@@ -220,7 +238,7 @@ return component(..., function()
 			for tile, coord in pairs(crackList) do
 				if ColorTile.isCracked(tile) then--destroy it
 					local row, column = unpack(coord)
-					columns[column][row] = nil
+					destroyTile(self, ent, row, column)
 				else--crack it
 					ColorTile.crack(tile)
 				end
