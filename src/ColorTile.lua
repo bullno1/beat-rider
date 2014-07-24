@@ -10,10 +10,14 @@ return module(function()
 		"crack",
 		"setMatched",
 		"draw",
+		"isMoving",
 		"isColored",
 		"isMatched",
 		"isCracked"
 	}
+
+	local MOVEMENT_TIME = 0.3
+	local SHRINK_TIME = 0.3
 
 	local DISTANCE_CURVE = Animation.createCurve{
 		{ 0.0,   0, MOAIEaseType.SOFT_EASE_IN },
@@ -30,7 +34,8 @@ return module(function()
 			colored = colored,
 			visualRow = startRow,
 			logicalRow = targetRow,
-			visible = false
+			visible = false,
+			moving = true
 		}
 
 		if colored then
@@ -75,6 +80,10 @@ return module(function()
 		end
 	end
 
+	function isMoving(tile)
+		return tile.moving
+	end
+
 	function isColored(tile)
 		return tile and tile.colored
 	end
@@ -94,8 +103,10 @@ return module(function()
 		local track = Entity.getByName("Track")
 		local note = tile.note
 
+		ent:onTileAnimationStart(tile)
+
 		-- Push the captured note back
-		for i = 0, 1, 1/60/0.3 do
+		for i = 0, 1, 1/60/MOVEMENT_TIME do
 			local songPos = rideController:getSongPos()
 			local gridDistance = track:getDistance(songPos)
 			local offset = DISTANCE_CURVE:getValueAtTime(i)
@@ -105,7 +116,7 @@ return module(function()
 		end
 
 		-- Move it down
-		for i = 0, 1, 1/60/0.2 do
+		for i = 0, 1, 1/60/SHRINK_TIME do
 			-- Maintain relative position
 			local songPos = rideController:getSongPos()
 			local gridDistance = track:getDistance(songPos)
@@ -129,6 +140,14 @@ return module(function()
 			local visualRow = visualRow - speed
 
 			tile.visualRow = visualRow
+
+			if diff == 0 and tile.moving then
+				tile.moving = false
+				ent:onTileAnimationEnd(tile)
+			elseif diff ~= 0 and not tile.moving then
+				tile.moving = true
+				ent:onTileAnimationStart(tile)
+			end
 
 			yield()
 		end
@@ -162,8 +181,8 @@ return module(function()
 
 		local centerX = (xMin + xMax) / 2
 		local centerY = (yMin + yMax) / 2
-		local width = (xMax - xMin) * countDown
-		local height = (yMax - yMin) * countDown
+		local width = (xMax - xMin) * (1 - countDown)
+		local height = (yMax - yMin) * (1 - countDown)
 
 		MOAIGfxDevice.setPenWidth(4)
 		MOAIGfxDevice.setPenColor(1, 1, 1)

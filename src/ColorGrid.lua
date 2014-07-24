@@ -27,7 +27,7 @@ return component(..., function()
 
 	msg("update", function(self, ent)
 		-- Count down to flushing grids
-		if self.countDown > 0 then
+		if self.countDown > 0 and self.numMovingTiles == 0 then
 			self.countDown = math.max(0, self.countDown - 1/60/2)
 
 			if self.countDown == 0 then
@@ -127,11 +127,6 @@ return component(..., function()
 
 	msg("onTileAnimationEnd", function(self, ent, tile)
 		self.numMovingTiles = self.numMovingTiles - 1
-
-		if self.numMovingTiles == 0 then
-			findMatches(self, ent)
-			self.countDown = 1
-		end
 	end)
 
 	-- Private
