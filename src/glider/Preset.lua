@@ -67,7 +67,7 @@ return module(function()
 			if entityProto["set"..name] then
 				setProperty(propertyTable, name, value)
 			else
-				error("Property '"..key.."' is non-existent or readonly")
+				error("Property '"..name.."' is non-existent or readonly")
 			end
 		end
 

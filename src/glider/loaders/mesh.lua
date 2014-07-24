@@ -50,7 +50,6 @@ return function(name)
 		local v = texCoords[(vertexIndex - 1) * 2 + 2]
 
 		vbo:writeFloat(transform:modelToWorld(x, y, z))
-		--vbo:writeFloat(x, y, z)
 		vbo:writeFloat(u, v)
 		vbo:writeColor32(1, 1, 1)
 	end
