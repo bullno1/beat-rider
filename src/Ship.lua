@@ -57,13 +57,14 @@ return component(..., function()
 		local smoothingFactor = 0.2
 		local lastSmooth = 0
 		local trackWidth = Options.getDevOptions().ride.track_width
-		local accuracy = 1000
+		local accuracy = 0.01
 
 		while true do
 			local x, y, z = motionSensor:getLevel()
-			local y = math.floor(math.clamp(y, -0.5, 0.5) * accuracy) / accuracy
-			local smooth = smoothingFactor * math.clamp(y, -0.5, 0.5) + (1 - smoothingFactor) * lastSmooth
-			ent:setX(smooth * trackWidth)
+			local y = math.clamp(y, -0.2, 0.2) / 0.2
+			y = math.floor(y / accuracy + 0.5) * accuracy
+			local smooth = smoothingFactor * y + (1 - smoothingFactor) * lastSmooth
+			ent:setX(smooth * trackWidth / 2)
 			lastSmooth = smooth
 			coroutine.yield()
 		end
