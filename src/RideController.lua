@@ -64,33 +64,44 @@ return component(..., function()
 			while currentNoteIndex <= numNotes and notesData[currentNoteIndex][1] < pos do
 				-- Check for collision with ship
 				local note = notes[currentNoteIndex]
-				local noteX = note:getX()
-				local noteLeft = noteX + noteMinX
-				local noteRight = noteX + noteMaxX
-				local leftEdgeIn = noteLeft <= shipLeft and shipLeft <= noteRight
-				local rightEdgeIn = noteLeft <= shipRight and shipRight <= noteRight
-				if leftEdgeIn or rightEdgeIn then
-					if note:getColored() then
-						score = score + 1
-					else
-						score = math.max(0, score - 1)
+
+				if note:getPrimary() then
+					local noteX = note:getX()
+					local noteLeft = noteX + noteMinX
+					local noteRight = noteX + noteMaxX
+					local leftEdgeIn = noteLeft <= shipLeft and shipLeft <= noteRight
+					local rightEdgeIn = noteLeft <= shipRight and shipRight <= noteRight
+					if leftEdgeIn or rightEdgeIn then
+						if note:getColored() then
+							score = score + 1
+						else
+							score = math.max(0, score - 1)
+						end
+
+						local noteLane = note:getLane()
+						grid:addNote(noteLane, note:getColored())
+
+						for tailIndex = currentNoteIndex + 1, numNotes do
+							if notesData[tailIndex][4] then -- this is a primary note
+								break
+							else -- this is a tail note
+								Entity.destroy(notes[tailIndex])
+							end
+						end
+
+						Entity.destroy(note)
 					end
 
-					local noteLane = note:getLane()
-					grid:addNote(noteLane, note:getColored())
-
-					Entity.destroy(note)
-				end
-
-				local noteScreenX, noteScreenY = objectLayer:worldToWnd(note:getProp():getWorldLoc())
-				local noteWorldX, noteWorldY = fxLayer:wndToWorld(noteScreenX, noteScreenY)
-				local effect = Entity.create("Spark")
-				effect:setX(noteWorldX)
-				effect:setY(noteWorldY)
-				if note:getColored() then
-					effect:getProp():setColor(0.2, 0.8, 0.6)
-				else
-					effect:getProp():setColor(0.2, 0.2, 0.2)
+					local noteScreenX, noteScreenY = objectLayer:worldToWnd(note:getProp():getWorldLoc())
+					local noteWorldX, noteWorldY = fxLayer:wndToWorld(noteScreenX, noteScreenY)
+					local effect = Entity.create("Spark")
+					effect:setX(noteWorldX)
+					effect:setY(noteWorldY)
+					if note:getColored() then
+						effect:getProp():setColor(0.2, 0.8, 0.6)
+					else
+						effect:getProp():setColor(0.2, 0.2, 0.2)
+					end
 				end
 
 				currentNoteIndex = currentNoteIndex + 1
