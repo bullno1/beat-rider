@@ -104,14 +104,22 @@ return module(function()
 	end
 
 	function generateNotes(onsets, energy, sampRate, hopSize)
-		local notes = {}
-		local lastTime = 0
 		local noteOpts = opts.notes
 		local energyThreshold = noteOpts.energy_threshold
 		local clusterMaxGap = noteOpts.cluster_max_gap
 		local clusterMaxSize = noteOpts.cluster_max_size
+		local sameColThreshold = noteOpts.same_column_threshold
+		local closeColThreshold = noteOpts.close_column_threshold
+		local avoidThreshold = noteOpts.avoid_threshold
+
+		local notes = {}
+		local lastTime = 0
 		local colored = false
 		local cluster = {}
+
+		local previousClusterTime = 0
+		local previousClusterColored = false
+		local previousClusterColumn = 2
 
 		for index, onsetTime in ipairs(onsets) do
 			local energyIndex = math.floor(onsetTime * sampRate / hopSize + 1.5)
@@ -119,16 +127,49 @@ return module(function()
 			colored = colored or energy >= energyThreshold
 
 			local clusterSize = #cluster
-			if onsetTime - lastTime > clusterMaxGap or clusterSize >= clusterMaxSize then
-				local gap = clusterSize > 1 and ((cluster[clusterSize] - cluster[1]) / (clusterSize - 1)) or 0
+			local noteNotInCluster = onsetTime - lastTime > clusterMaxGap
+			local clusterLimitReached = clusterSize >= clusterMaxSize
+			local clusterFormed = clusterSize > 0
+			if clusterFormed and ( noteNotInCluster or clusterLimitReached ) then -- create a cluster of notes
+				local clusterTime = cluster[1]
+				local clusterDistance = clusterTime - previousClusterTime
 
-				local col = math.random(3)
-				local start = cluster[1]
-				for i, time in ipairs(cluster) do
-					table.insert(notes, { start + (i - 1) * gap, col, colored, i == 1} )
+				-- Pick a column based on serveral criteria
+				local column
+				if colored then
+					if previousClusterColored then -- try to stay close
+						column = closeRandomColumn(
+							previousClusterColumn,
+							clusterDistance,
+							sameColThreshold,
+							closeColThreshold
+						)
+					else -- try to avoid
+						column = differentRandomColumn(previousClusterColumn, clusterDistance, avoidThreshold)
+					end
+				else
+					if previousClusterColored then -- try to avoid
+						column = differentRandomColumn(previousClusterColumn, clusterDistance, avoidThreshold)
+					else -- try to stay close
+						column = closeRandomColumn(
+							previousClusterColumn,
+							clusterDistance,
+							sameColThreshold,
+							closeColThreshold
+						)
+					end
 				end
-				colored = false
+
+				local gap = clusterSize > 1 and ((cluster[clusterSize] - cluster[1]) / (clusterSize - 1)) or 0
+				for i, time in ipairs(cluster) do
+					table.insert(notes, { clusterTime + (i - 1) * gap, column, colored, i == 1} )
+				end
+
 				table.clear(cluster)
+				previousClusterColored = colored
+				previousClusterTime = clusterTime
+				previousClusterColumn = column
+				colored = false
 			end
 
 			table.insert(cluster, onsetTime)
@@ -137,6 +178,36 @@ return module(function()
 		end
 
 		return notes
+	end
+
+	function differentRandomColumn(previousColumn, clusterDistance, avoidThreshold)
+		local column
+
+		if clusterDistance <= avoidThreshold then
+			repeat
+				column = math.random(3)
+			until column ~= previousColumn
+		else
+			column = math.random(3)
+		end
+
+		return column
+	end
+
+	function closeRandomColumn(previousColumn, clusterDistance, sameColThreshold, closeColThreshold)
+		local column
+
+		if clusterDistance <= sameColThreshold then -- use the same column
+			column = previousColumn
+		elseif clusterDistance <= closeColThreshold then -- one column apart
+			repeat
+				column = math.random(3)
+			until math.abs(column - previousColumn) == 1
+		else -- anything
+			column = math.random(3)
+		end
+
+		return column
 	end
 
 	function buildAnalysisPipeline(path)
