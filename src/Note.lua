@@ -30,4 +30,17 @@ return component(..., function()
 			ent:setX((val - 2) * trackWidth / 3)
 		end
 	)
+
+	property("Primary",
+		function(self, ent)
+			return self.primary
+		end,
+		function(self, ent, val)
+			self.primary = val
+			ent:setXScale(val and 1 or 0.2)
+			ent:setYScale(val and 1 or 0.2)
+			ent:setZScale(val and 1 or 4)
+			ent:setY(val and 0 or 5)
+		end
+	)
 end)

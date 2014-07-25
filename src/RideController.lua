@@ -123,11 +123,12 @@ return component(..., function()
 
 		for i, noteData in ipairs(notesData) do
 			local note = Entity.create("Note")
-			local time, lane, colored = unpack(noteData)
+			local time, lane, colored, primary = unpack(noteData)
 
 			note:setTrackPosition(time + posOffset)
 			note:setLane(lane)
 			note:setColored(colored)
+			note:setPrimary(primary)
 
 			notes[i] = note
 		end

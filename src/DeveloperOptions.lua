@@ -12,9 +12,9 @@ analysis.slope.data_smoothing_factor  = 0.007
 analysis.slope.trend_smoothing_factor = 0.01
 analysis.slope.window_radius          = 10
 
-analysis.notes.energy_threshold   = 0.1
-analysis.notes.cluster_max_length = 0.1
-analysis.notes.cluster_max_size   = 3
+analysis.notes.energy_threshold = 0.15
+analysis.notes.cluster_max_gap  = 0.1
+analysis.notes.cluster_max_size = 5
 
 ride.time_scale          = 2000
 ride.track_width         = 130

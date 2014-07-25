@@ -106,33 +106,31 @@ return module(function()
 	function generateNotes(onsets, energy, sampRate, hopSize)
 		local notes = {}
 		local lastTime = 0
-		local lastCol = 1
 		local noteOpts = opts.notes
 		local energyThreshold = noteOpts.energy_threshold
-		local clusterMaxLength = noteOpts.cluster_max_length
+		local clusterMaxGap = noteOpts.cluster_max_gap
 		local clusterMaxSize = noteOpts.cluster_max_size
-		local currentClusterSize = 0
+		local colored = false
+		local cluster = {}
 
 		for index, onsetTime in ipairs(onsets) do
 			local energyIndex = math.floor(onsetTime * sampRate / hopSize + 1.5)
 			local energy = energy[energyIndex]
-			local colored = energy >= energyThreshold
+			colored = colored or energy >= energyThreshold
 
-			-- Column is random with forced clustering
-			local col
-			if onsetTime - lastTime < clusterMaxLength and currentClusterSize < clusterMaxSize then
-				col = lastCol
-				currentClusterSize = currentClusterSize + 1
-			else
-				repeat
-					col = math.random(3)
-				until col ~= lastCol
-				currentClusterSize = 0
+			local clusterSize = #cluster
+			if onsetTime - lastTime > clusterMaxGap or clusterSize >= clusterMaxSize then
+				local col = math.random(3)
+				for i, time in ipairs(cluster) do
+					table.insert(notes, { time, col, colored, i == 1} )
+				end
+				colored = false
+				table.clear(cluster)
 			end
-			lastTime = onsetTime
-			lastCol = col
 
-			table.insert(notes, { onsetTime, col, colored })
+			table.insert(cluster, onsetTime)
+
+			lastTime = onsetTime
 		end
 
 		return notes
