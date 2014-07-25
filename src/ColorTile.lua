@@ -18,6 +18,7 @@ return module(function()
 
 	local MOVEMENT_TIME = 0.2
 	local SHRINK_TIME = 0.2
+	local TILE_SPEED = 0.2
 
 	local DISTANCE_CURVE = Animation.createCurve{
 		{ 0.0,   0, MOAIEaseType.SOFT_EASE_IN },
@@ -136,7 +137,7 @@ return module(function()
 			local logicalRow = tile.logicalRow
 			local visualRow = tile.visualRow
 			local diff = visualRow - logicalRow
-			local speed = math.min(diff, 0.08)
+			local speed = math.min(diff, TILE_SPEED)
 			local visualRow = visualRow - speed
 
 			tile.visualRow = visualRow
