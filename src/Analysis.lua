@@ -120,9 +120,12 @@ return module(function()
 
 			local clusterSize = #cluster
 			if onsetTime - lastTime > clusterMaxGap or clusterSize >= clusterMaxSize then
+				local gap = clusterSize > 1 and ((cluster[clusterSize] - cluster[1]) / (clusterSize - 1)) or 0
+
 				local col = math.random(3)
+				local start = cluster[1]
 				for i, time in ipairs(cluster) do
-					table.insert(notes, { time, col, colored, i == 1} )
+					table.insert(notes, { start + (i - 1) * gap, col, colored, i == 1} )
 				end
 				colored = false
 				table.clear(cluster)
