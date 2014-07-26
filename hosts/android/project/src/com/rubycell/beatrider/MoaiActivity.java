@@ -205,8 +205,8 @@ public class MoaiActivity extends Activity {
 
 		if ( mAccelerometerListener != null ) {
 
-			mSensorManager.registerListener ( mAccelerometerListener, mAccelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL );
-			mSensorManager.registerListener ( mAccelerometerListener, mMagnetometerSensor, SensorManager.SENSOR_DELAY_NORMAL );
+			mSensorManager.registerListener ( mAccelerometerListener, mAccelerometerSensor, SensorManager.SENSOR_DELAY_GAME );
+			mSensorManager.registerListener ( mAccelerometerListener, mMagnetometerSensor, SensorManager.SENSOR_DELAY_GAME );
 		}
 
 		if ( mLocationListener != null ) {
@@ -275,8 +275,8 @@ public class MoaiActivity extends Activity {
 			if ( mAccelerometerListener == null ) {
 
 				mAccelerometerListener = new AccelerometerEventListener ();
-				mSensorManager.registerListener ( mAccelerometerListener, mAccelerometerSensor, SensorManager.SENSOR_DELAY_NORMAL );
-				mSensorManager.registerListener ( mAccelerometerListener, mMagnetometerSensor, SensorManager.SENSOR_DELAY_NORMAL );
+				mSensorManager.registerListener ( mAccelerometerListener, mAccelerometerSensor, SensorManager.SENSOR_DELAY_GAME );
+				mSensorManager.registerListener ( mAccelerometerListener, mMagnetometerSensor, SensorManager.SENSOR_DELAY_GAME );
 			}
 		}
 	}
