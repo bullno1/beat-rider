@@ -39,7 +39,7 @@ return component(..., function()
 			self.primary = val
 			ent:setXScale(val and 1 or 0.2)
 			ent:setYScale(val and 1 or 0.2)
-			ent:setZScale(val and 1 or 4)
+			ent:setZScale(val and 1 or 0.2)
 			ent:setY(val and 0 or 5)
 		end
 	)
