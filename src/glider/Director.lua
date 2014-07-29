@@ -166,7 +166,7 @@ return module(function()
 		end
 
 		-- Create frame buffers
-		for buffIndex, buffSpec in pairs(sceneSpecs.frameBuffers) do
+		for buffIndex, buffSpec in pairs(sceneSpecs.frameBuffers or table.empty) do
 			local frameBuffer = MOAIFrameBufferTexture.new()
 			local bufferName = buffSpec.name
 			frameBuffer:init(buffSpec.width, buffSpec.height, 78)
@@ -241,7 +241,7 @@ return module(function()
 		MOAIGfxDevice.getFrameBuffer():setRenderTable(renderTables.main)
 
 		-- Init frame buffers
-		for buffIndex, buffSpec in pairs(sceneSpecs.frameBuffers) do
+		for buffIndex, buffSpec in pairs(sceneSpecs.frameBuffers or table.empty) do
 			local renderTable = assert(
 				renderTables[buffSpec.renderTable],
 				"Buffer "..tostring(buffSpec.name).."("..buffIndex..") specify an invalid render table: '"..buffSpec.renderTable.."'"

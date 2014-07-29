@@ -144,26 +144,26 @@ return module(function()
 		return renderTables
 	end
 
-	function parseRenderTable(renderTableXml)
+	function parseRenderTable(renderTableXml, context)
 		local renderTable = {}
 
 		for elemIndex, elem in childElementsOf(renderTableXml) do
 			if elem.name == "layer" then
-				table.insert(renderTable, parseLayer(elem))
+				table.insert(renderTable, parseLayer(elem, context.."["..elemIndex.."]"))
 			end
 		end
 
 		return renderTable
 	end
 
-	function parseLayer(layerXml)
+	function parseLayer(layerXml, context)
 		local attrs = layerXml.attr
 
 		local sort = attrs.sort or "none"
 		return {
 			type = "layer",
-			partition = attrs.partition,
-			viewport = attrs.viewport,
+			partition = assert(attrs.partition, "Layer does not define a partition\nContext:"..context),
+			viewport = assert(attrs.viewport, "Layer does not define a viewport\nContext:"..context),
 			camera = attrs.camera,
 			name = attrs.name,
 			sort = MOAILayer["SORT_"..sort:upper()]

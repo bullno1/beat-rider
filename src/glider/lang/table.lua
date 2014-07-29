@@ -3,3 +3,9 @@ function table.clear(table)
 		table[key] = nil
 	end
 end
+
+table.empty = setmetatable({}, {
+	__newindex = function()
+		error("Cannot modify empty table", 2)
+	end
+})
