@@ -37,13 +37,13 @@ return module(function()
 				track = track,
 				slope = buffers.slope:getAsTable(true)
 			}
-			writeCache(path, result)
+			--writeCache(path, result)
 			return result
 		end
 	end
 
 	function getFromCache(path)
-		local cacheFilePath = getCacheFilePath(path)
+		local cacheFilePath = 'fail'
 
 		local fileStream = MOAIFileStream.new()
 		if not fileStream:open(cacheFilePath, MOAIFileStream.READ) then return end
