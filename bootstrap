@@ -1,0 +1,6 @@
+#!/bin/sh -e
+
+git submodule sync
+git submodule update --init
+deps/easter/easter auto-config
+deps/easter/easter config moai_root $(pwd)/deps/moai

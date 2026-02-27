@@ -1,4 +1,9 @@
 [submodule "hosts/titan"]
 	path = hosts/titan
-	url = git@tapbat.com:bachlv/titan
-	branch = beat-rider
+	url = https://github.com/bullno1/titan.git
+[submodule "deps/moai"]
+	path = deps/moai
+	url = https://github.com/bullno1/moai-dev.git
+[submodule "deps/easter"]
+	path = deps/easter
+	url = https://github.com/bullno1/easter.git
