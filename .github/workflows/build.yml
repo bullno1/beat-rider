@@ -1,0 +1,32 @@
+---
+name: Build
+run-name: Build
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+on:
+  - push
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          submodules: true
+          fetch-tags: true
+          fetch-depth: 0
+      - name: Update package repo
+        run:
+          sudo apt-get update -qq
+      - name: Install dependencies
+        uses: daaku/gh-action-apt-install@v4
+        with:
+          packages: gcc-multilib libasound2-dev libpulse-dev libglfw3 libglfw3-dev libx11-dev libxcursor-dev libxrandr-dev libxinerama-dev libxi-dev libxext-dev libxfixes-dev libgtk-3-dev freeglut3-dev libxxf86vm-dev
+      - name: Build
+        shell: bash
+        run: |
+          ./bootstrap
+          cat ~/.easter
+          set -x
+          deps/easter/easter build develop titan
