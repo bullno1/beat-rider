@@ -53,3 +53,11 @@ The pipeline itself is also defined using a combination of vibes and reading som
 
 1. Put an *mp3* file in `assets/sfx`
 2. Update `main.lua` to point to the new file
+
+The default song is [Bad Apple](https://www.youtube.com/watch?v=9lNZ_Rnr7Jc) but there's a long stretch of no onset detected and I have no idea why.
+
+Some songs that seem to work well (not included due to copyright):
+
+* Radioactive: https://www.youtube.com/watch?v=ktvTqknDobU
+* E La Don Che: https://www.youtube.com/watch?v=K01LvulhFRg
+* Oh NaNa: https://www.youtube.com/watch?v=yPTcKSVAEvA

@@ -8,7 +8,7 @@ glider.start{
 			"Visual"
 		},
 		firstScene = "analyze",
-		sceneData = "assets/sfx/TinhThoiXotXa.mp3"
+		sceneData = "assets/sfx/BadApple.mp3"
 	},
 	DebugLines = {
 		PARTITION_CELLS        = false,

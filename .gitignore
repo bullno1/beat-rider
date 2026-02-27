@@ -2,7 +2,8 @@
 .ycm_extra_conf.pyc
 /assets/atlases
 /assets/textures/gen
-/assets/sfx/*.mp3
+/assets/sfx
+!/assets/sfx/BadApple.mp3
 /.sandbox
 /temp
 *.apk

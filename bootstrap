@@ -2,5 +2,8 @@
 
 git submodule sync
 git submodule update --init
+git lfs install
+git lfs fetch --all
+git lfs pull
 deps/easter/easter auto-config
 deps/easter/easter config moai_root $(pwd)/deps/moai
